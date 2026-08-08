@@ -177,8 +177,15 @@ let panning = false;
 let lastClientX = 0;
 let lastClientY = 0;
 
+function isFormControl(el: Element | null): boolean {
+  if (!el) return false;
+  return ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(el.tagName);
+}
+
 window.addEventListener("keydown", (e) => {
-  if (e.code === "Space" && !spaceDown) {
+  // Guard against hijacking Space on a focused button/input (native Space = click/type there).
+  if (e.code === "Space" && !spaceDown && !isFormControl(document.activeElement)) {
+    e.preventDefault(); // avoid page scroll while panning
     spaceDown = true;
     stageEl.classList.add("panning-ready");
   }
