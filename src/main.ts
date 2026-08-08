@@ -1,6 +1,7 @@
 import { AppState, type Tool } from "./ui/app-state";
 import { installDrawing } from "./ui/draw";
-import { newScene, seedIdCounter, setPalette } from "./engine/scene";
+import { deleteSelected, renderPanel, rerollSelected, type PanelDeps } from "./ui/panel";
+import { getStroke, newScene, reslotStroke, seedIdCounter, setPalette } from "./engine/scene";
 import { History } from "./engine/history";
 import { autosave, flushAutosave, loadAutosave } from "./engine/persist";
 import { SheetRenderer } from "./render/svg";
@@ -35,6 +36,7 @@ const btnUndo = document.getElementById("btn-undo") as HTMLButtonElement;
 const btnRedo = document.getElementById("btn-redo") as HTMLButtonElement;
 const btnFit = document.getElementById("btn-fit") as HTMLButtonElement;
 const btnNew = document.getElementById("btn-new") as HTMLButtonElement;
+const panelEl = document.getElementById("param-panel") as HTMLElement;
 
 // ---- boot ----
 
@@ -90,6 +92,7 @@ function doUndo(): void {
   renderer.renderScene(scene);
   applyViewBox();
   syncPaletteSelect();
+  syncSelectionAfterSceneReplace();
   autosave(scene);
   refreshChrome();
 }
@@ -102,6 +105,7 @@ function doRedo(): void {
   renderer.renderScene(scene);
   applyViewBox();
   syncPaletteSelect();
+  syncSelectionAfterSceneReplace();
   autosave(scene);
   refreshChrome();
 }
@@ -111,12 +115,52 @@ btnRedo.addEventListener("click", doRedo);
 btnFit.addEventListener("click", doFit);
 
 window.addEventListener("resize", doFit);
-window.addEventListener("keydown", (e) => {
-  if (e.ctrlKey && e.key === "0") {
-    e.preventDefault();
-    doFit();
+
+// ---- selection & param panel infra ----
+// (the interactions that *drive* selection — svg click, keyboard — are wired
+// further down, near the drawing section; these are the shared primitives.)
+
+function liveUpdate(): void {
+  if (!appState.selection) return;
+  renderer.updateStroke(scene, appState.selection);
+  renderer.setSelection(scene, appState.selection);
+}
+
+const panelDeps: PanelDeps = {
+  container: panelEl,
+  getScene: () => scene,
+  state: appState,
+  renderer,
+  commit,
+  liveUpdate,
+};
+
+function refreshPanel(): void {
+  renderPanel(panelDeps, brushParams);
+}
+
+function select(id: string): void {
+  appState.selection = id;
+  renderer.setSelection(scene, id);
+  refreshPanel();
+}
+
+function deselect(): void {
+  if (appState.selection === null) return;
+  appState.selection = null;
+  renderer.setSelection(scene, null);
+  refreshPanel();
+}
+
+// renderScene() (undo/redo/new-sheet) rebuilds the whole SVG, wiping g.overlay
+// — re-apply the halo if the selected stroke survived, else drop the selection.
+function syncSelectionAfterSceneReplace(): void {
+  if (appState.selection && !getStroke(scene, appState.selection)) {
+    appState.selection = null;
   }
-});
+  renderer.setSelection(scene, appState.selection);
+  refreshPanel();
+}
 
 // ---- tools ----
 
@@ -126,6 +170,7 @@ function setActiveTool(tool: Tool): void {
     b.dataset.active = String(b.dataset.tool === tool);
   });
   svgEl.classList.toggle("tool-select", tool === "select");
+  refreshPanel();
 }
 toolButtons.forEach((b) => b.addEventListener("click", () => setActiveTool(b.dataset.tool as Tool)));
 setActiveTool(appState.tool);
@@ -148,8 +193,20 @@ paletteSelect.addEventListener("change", () => {
   setPalette(scene, paletteSelect.value);
   renderer.renderScene(scene);
   applyViewBox();
+  syncSelectionAfterSceneReplace();
   commit();
 });
+
+// ---- palette swatch hook ----
+// The palette strip itself is Task 19's; this is the seam it wires into.
+// For now this only handles the "reslot the current selection" case — the
+// pin/auto-rotate behavior for when nothing is selected is Task 19's to add.
+export function onSwatchClick(slot: number): void {
+  if (!appState.selection) return; // TODO(Task 19): pin/auto-rotate with no selection
+  reslotStroke(scene, appState.selection, slot);
+  liveUpdate();
+  commit();
+}
 
 // ---- new-sheet dialog ----
 
@@ -166,6 +223,7 @@ newDialog.querySelectorAll<HTMLButtonElement>("button[data-sheet]").forEach((btn
     renderer.renderScene(scene);
     doFit();
     syncPaletteSelect();
+    syncSelectionAfterSceneReplace();
     refreshChrome();
     newDialog.close();
   });
@@ -255,6 +313,54 @@ installDrawing({
   // by keydown, strictly earlier than any click in the same pan gesture.
   isPanning: () => spaceDown,
   commit,
+});
+
+// ---- selection: click-to-select + keyboard ----
+
+svgEl.addEventListener("click", (e) => {
+  if (appState.tool !== "select") return;
+  const target = e.target as Element | null;
+  const hitEl = target?.closest?.("[data-stroke-id]") ?? null;
+  if (hitEl) select(hitEl.getAttribute("data-stroke-id")!);
+  else deselect();
+});
+
+const TOOL_KEYS: Record<string, Tool> = { "1": "zigzag", "2": "hexpack", "3": "sunstamp", v: "select" };
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    deselect();
+    return;
+  }
+  if (isFormControl(document.activeElement)) return; // let inputs/selects/buttons/textareas handle their own keys
+
+  if (e.ctrlKey && e.key === "0") {
+    e.preventDefault();
+    doFit();
+    return;
+  }
+  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "z") {
+    e.preventDefault();
+    doRedo();
+    return;
+  }
+  if (e.ctrlKey && e.key.toLowerCase() === "z") {
+    e.preventDefault();
+    doUndo();
+    return;
+  }
+  if (e.ctrlKey || e.altKey || e.metaKey) return; // don't hijack other chords for the bare-key shortcuts below
+
+  const tool = TOOL_KEYS[e.key.toLowerCase()];
+  if (tool) {
+    setActiveTool(tool);
+    return;
+  }
+  if (e.key === "r") {
+    rerollSelected(panelDeps, brushParams);
+  } else if (e.key === "Delete" || e.key === "Backspace") {
+    deleteSelected(panelDeps, brushParams);
+  }
 });
 
 // ---- misc ----

@@ -123,6 +123,54 @@ button {
   color: var(--text-dim);
 }
 
+#param-panel h3 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+#param-panel .panel-hint {
+  margin: 0;
+}
+
+#param-panel .panel-note {
+  margin: 0;
+  font-style: italic;
+}
+
+#param-panel .panel-actions {
+  display: flex;
+  gap: 6px;
+}
+
+#param-panel .panel-actions button {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  cursor: pointer;
+  color: inherit;
+}
+
+#param-panel .panel-actions button:hover {
+  background: var(--bg);
+}
+
+#param-panel .panel-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#param-panel .panel-slider-row input[type="range"] {
+  width: 100%;
+}
+
+#param-panel .panel-slider-row input[type="range"]:disabled {
+  opacity: 0.45;
+}
+
 #hand-dial {
   display: flex;
   flex-direction: column;
