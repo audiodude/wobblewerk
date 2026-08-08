@@ -17,9 +17,15 @@ export function deserializeScene(json: string): Scene {
 let timer: ReturnType<typeof setTimeout> | undefined;
 let pending: (() => void) | undefined;
 
-export function autosave(scene: Scene, storage: Pick<Storage, "setItem"> = localStorage): void {
+function defaultStorage(): Storage | undefined {
+  return typeof localStorage !== "undefined" ? localStorage : undefined;
+}
+
+export function autosave(scene: Scene, storage: Pick<Storage, "setItem"> | undefined = undefined): void {
+  const store = storage ?? defaultStorage();
+  if (!store) return;
   clearTimeout(timer);
-  pending = () => storage.setItem(AUTOSAVE_KEY, serializeScene(scene));
+  pending = () => store.setItem(AUTOSAVE_KEY, serializeScene(scene));
   timer = setTimeout(() => { pending?.(); pending = undefined; }, 300);
 }
 
@@ -29,8 +35,10 @@ export function flushAutosave(): void {
   pending = undefined;
 }
 
-export function loadAutosave(storage: Pick<Storage, "getItem"> = localStorage): Scene | null {
-  const raw = storage.getItem(AUTOSAVE_KEY);
+export function loadAutosave(storage: Pick<Storage, "getItem"> | undefined = undefined): Scene | null {
+  const store = storage ?? defaultStorage();
+  if (!store) return null;
+  const raw = store.getItem(AUTOSAVE_KEY);
   if (!raw) return null;
   try { return deserializeScene(raw); } catch { return null; }
 }

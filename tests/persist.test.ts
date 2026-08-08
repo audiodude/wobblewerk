@@ -51,3 +51,25 @@ test("loadAutosave returns scene or null", () => {
   expect(loadAutosave(bad)).toBeNull();
   expect(loadAutosave(empty)).toBeNull();
 });
+
+test("flushAutosave fires pending immediately and prevents double-write", () => {
+  const store = new Map<string, string>();
+  const storage = {
+    setItem: vi.fn((k: string, v: string) => void store.set(k, v)),
+  };
+  const scene = mkScene();
+  autosave(scene, storage);
+  expect(storage.setItem).not.toHaveBeenCalled();
+  flushAutosave();
+  expect(storage.setItem).toHaveBeenCalledOnce();
+  expect(store.get(AUTOSAVE_KEY)).toBe(serializeScene(scene));
+  vi.advanceTimersByTime(300);
+  expect(storage.setItem).toHaveBeenCalledOnce(); // not called again
+});
+
+test("autosave and loadAutosave without storage argument in headless environment", () => {
+  const scene = mkScene();
+  expect(() => autosave(scene)).not.toThrow();
+  expect(() => loadAutosave()).not.toThrow();
+  expect(loadAutosave()).toBeNull();
+});
