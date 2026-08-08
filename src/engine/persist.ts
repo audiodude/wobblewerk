@@ -10,16 +10,37 @@ function isFiniteNumber(n: unknown): n is number {
   return typeof n === "number" && Number.isFinite(n);
 }
 
-function isValidBrushInput(input: unknown): boolean {
-  if (typeof input !== "object" || input === null) return false;
-  const kind = (input as { kind?: unknown }).kind;
-  return kind === "point" || kind === "path" || kind === "region";
+function isValidXY(p: unknown): boolean {
+  if (typeof p !== "object" || p === null) return false;
+  const xy = p as Record<string, unknown>;
+  return isFiniteNumber(xy.x) && isFiniteNumber(xy.y);
 }
 
-// Minimally shaped, not exhaustively validated (e.g. baked entries' own fields
-// aren't checked) — enough to guarantee downstream code (ViewBox construction,
-// renderScene, palette lookups) can't throw on a structurally-broken-but-
-// version-1 file.
+// point needs a real `at`; path/region need a `points` array of real XYs —
+// a malformed one (missing/non-numeric coords) would otherwise only surface
+// later, as a throw from a dial-move rebake or a re-roll, not at open time.
+function isValidBrushInput(input: unknown): boolean {
+  if (typeof input !== "object" || input === null) return false;
+  const i = input as Record<string, unknown>;
+  if (i.kind === "point") return isValidXY(i.at);
+  if (i.kind === "path" || i.kind === "region") return Array.isArray(i.points) && i.points.every(isValidXY);
+  return false;
+}
+
+// A baked path entry as rendered by render/svg.ts's inkAttrs (`d`/`width`
+// read directly off it, `stroke`/`fill` gate ink attrs) — checked so a
+// malformed entry (e.g. `null`) can't throw inside renderScene, which runs
+// outside deserializeScene's own try/catch at every call site.
+function isValidBakedPath(entry: unknown): boolean {
+  if (typeof entry !== "object" || entry === null) return false;
+  const b = entry as Record<string, unknown>;
+  return typeof b.d === "string" && typeof b.stroke === "boolean" && typeof b.fill === "boolean" && isFiniteNumber(b.width);
+}
+
+// Validated deeply enough that downstream code (ViewBox construction,
+// renderScene's inkAttrs, palette lookups) can't throw on a structurally-
+// broken-but-version-1 file — every stroke's brush input and baked path
+// entries are checked, not just their containers' shapes.
 function isValidStroke(stroke: unknown): boolean {
   if (typeof stroke !== "object" || stroke === null) return false;
   const s = stroke as Record<string, unknown>;
@@ -30,7 +51,7 @@ function isValidStroke(stroke: unknown): boolean {
     isFiniteNumber(s.seed) &&
     isFiniteNumber(s.colorSlot) &&
     typeof s.params === "object" && s.params !== null &&
-    Array.isArray(s.baked) &&
+    Array.isArray(s.baked) && s.baked.every(isValidBakedPath) &&
     isValidBrushInput(s.input)
   );
 }

@@ -65,6 +65,74 @@ test("deserialize rejects structurally-malformed version-1 files", () => {
   ).not.toThrow();
 });
 
+test("deserialize rejects malformed baked entries and brush inputs (coordinator review round 2)", () => {
+  const base = { version: 1, sheet: { w: 100, h: 100 }, paletteId: "notebook", hand: 0.5 };
+  const mkStroke = (overrides: Record<string, unknown>) => ({
+    id: "s1", brush: "zigzag", brushVersion: 1, seed: 1, params: {}, colorSlot: 1,
+    input: { kind: "path", points: [{ x: 0, y: 0 }] },
+    baked: [{ d: "M0 0", stroke: true, fill: false, width: 2 }],
+    ...overrides,
+  });
+
+  // a `null` baked entry — this exact shape used to pass validation, reach
+  // renderScene's inkAttrs (`b.d` on null), and throw outside the try/catch.
+  expect(() =>
+    deserializeScene(JSON.stringify({ ...base, strokes: [mkStroke({ baked: [null] })] })),
+  ).toThrow("unsupported file");
+
+  // a baked entry missing `d`
+  expect(() =>
+    deserializeScene(
+      JSON.stringify({ ...base, strokes: [mkStroke({ baked: [{ stroke: true, fill: false, width: 2 }] })] }),
+    ),
+  ).toThrow("unsupported file");
+
+  // a baked entry with a non-finite width
+  expect(() =>
+    deserializeScene(
+      JSON.stringify({
+        ...base,
+        strokes: [mkStroke({ baked: [{ d: "M0 0", stroke: true, fill: false, width: "thick" }] })],
+      }),
+    ),
+  ).toThrow("unsupported file");
+
+  // a point input without `at`
+  expect(() =>
+    deserializeScene(JSON.stringify({ ...base, strokes: [mkStroke({ input: { kind: "point" } })] })),
+  ).toThrow("unsupported file");
+
+  // a point input with non-numeric coords
+  expect(() =>
+    deserializeScene(
+      JSON.stringify({ ...base, strokes: [mkStroke({ input: { kind: "point", at: { x: "0", y: 0 } } })] }),
+    ),
+  ).toThrow("unsupported file");
+
+  // a path input whose points aren't an array
+  expect(() =>
+    deserializeScene(JSON.stringify({ ...base, strokes: [mkStroke({ input: { kind: "path", points: "nope" } })] })),
+  ).toThrow("unsupported file");
+
+  // a path input with a malformed point in the array
+  expect(() =>
+    deserializeScene(
+      JSON.stringify({ ...base, strokes: [mkStroke({ input: { kind: "path", points: [{ x: 0, y: 0 }, {}] } })] }),
+    ),
+  ).toThrow("unsupported file");
+
+  // a fully valid file (point, path, and region inputs) still round-trips
+  const validJson = JSON.stringify({
+    ...base,
+    strokes: [
+      mkStroke({ id: "s1", input: { kind: "point", at: { x: 1, y: 2 } } }),
+      mkStroke({ id: "s2", input: { kind: "path", points: [{ x: 0, y: 0 }, { x: 5, y: 5 }] } }),
+      mkStroke({ id: "s3", input: { kind: "region", points: [{ x: 0, y: 0 }, { x: 5, y: 5 }, { x: 5, y: 0 }] } }),
+    ],
+  });
+  expect(() => deserializeScene(validJson)).not.toThrow();
+});
+
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 

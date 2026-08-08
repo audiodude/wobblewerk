@@ -335,6 +335,14 @@ async function openFile(file: File): Promise<void> {
   // sheet) happens here, into locals, before any real state is touched. Any
   // throw falls through to the catch below; `scene`/`vb` are never reassigned
   // on failure, so the current document is provably untouched.
+  //
+  // Everything after this try (history.push/autosave/renderScene/...) is left
+  // unguarded on purpose — deserializeScene now validates deeply enough
+  // (brush input coords, baked path entries) that those calls shouldn't be
+  // able to throw on a file that passed validation. The `.catch` on this
+  // function's call site below is the backstop for that assumption, not the
+  // primary defense: it only prevents a silent unhandled rejection, it can't
+  // undo already-committed scene/history/autosave state.
   let opened: Scene;
   let newVb: ViewBox;
   try {
@@ -366,7 +374,10 @@ async function openFile(file: File): Promise<void> {
 fileOpenInput.addEventListener("change", () => {
   const file = fileOpenInput.files?.[0];
   fileOpenInput.value = ""; // reset so re-opening the same file re-fires 'change'
-  if (file) void openFile(file);
+  // Backstop, not the primary defense (see openFile's comment): guarantees no
+  // silent unhandled rejection even if some future gap lets a throw past
+  // deserializeScene's validation and into the post-assignment continuation.
+  if (file) openFile(file).catch(() => alert("Not a wobblewerk file"));
 });
 
 btnExportSvg.addEventListener("click", () => {
