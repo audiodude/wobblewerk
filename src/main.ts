@@ -12,11 +12,12 @@ import {
   setPalette,
 } from "./engine/scene";
 import { History } from "./engine/history";
-import { autosave, flushAutosave, loadAutosave } from "./engine/persist";
+import { autosave, deserializeScene, flushAutosave, loadAutosave, serializeScene } from "./engine/persist";
 import { SheetRenderer } from "./render/svg";
 import { ViewBox } from "./render/viewport";
 import { getPalette, PALETTES } from "./model/palettes";
 import { exportSvgString } from "./export/svg";
+import { download, exportPngBlob } from "./export/png";
 import { BRUSHES } from "./brushes/index";
 import { defaultParams } from "./model/types";
 import type { Scene } from "./model/types";
@@ -50,6 +51,11 @@ const btnUndo = document.getElementById("btn-undo") as HTMLButtonElement;
 const btnRedo = document.getElementById("btn-redo") as HTMLButtonElement;
 const btnFit = document.getElementById("btn-fit") as HTMLButtonElement;
 const btnNew = document.getElementById("btn-new") as HTMLButtonElement;
+const btnSave = document.getElementById("btn-save") as HTMLButtonElement;
+const btnOpen = document.getElementById("btn-open") as HTMLButtonElement;
+const btnExportSvg = document.getElementById("btn-export-svg") as HTMLButtonElement;
+const btnExportPng = document.getElementById("btn-export-png") as HTMLButtonElement;
+const fileOpenInput = document.getElementById("file-open") as HTMLInputElement;
 const panelEl = document.getElementById("param-panel") as HTMLElement;
 
 // ---- boot ----
@@ -303,6 +309,53 @@ newDialog.querySelectorAll<HTMLButtonElement>("button[data-sheet]").forEach((btn
     refreshChrome();
     newDialog.close();
   });
+});
+
+// ---- save / open / export ----
+
+btnSave.addEventListener("click", () => {
+  download("wobblewerk.json", new Blob([serializeScene(scene)], { type: "application/json" }));
+});
+
+btnOpen.addEventListener("click", () => fileOpenInput.click());
+
+// Opened files render from their stored bake verbatim: renderer.renderScene()
+// only ever reads stroke.baked (see render/svg.ts's inkAttrs), never calls
+// setHand/bakeStroke/migrate, so this path can't accidentally re-bake.
+async function openFile(file: File): Promise<void> {
+  let opened: Scene;
+  try {
+    opened = deserializeScene(await file.text());
+  } catch {
+    alert("Not a wobblewerk file");
+    return; // current scene untouched
+  }
+  scene = opened;
+  seedIdCounter(scene);
+  vb = new ViewBox(scene.sheet.w, scene.sheet.h); // opened sheet may differ in size from the current one
+  history.reset(scene);
+  autosave(scene);
+  renderer.renderScene(scene);
+  doFit();
+  syncPaletteSelect();
+  syncSelectionAfterSceneReplace();
+  refreshChrome();
+}
+
+fileOpenInput.addEventListener("change", () => {
+  const file = fileOpenInput.files?.[0];
+  fileOpenInput.value = ""; // reset so re-opening the same file re-fires 'change'
+  if (file) void openFile(file);
+});
+
+btnExportSvg.addEventListener("click", () => {
+  download("wobblewerk.svg", new Blob([exportSvgString(svgEl, scene)], { type: "image/svg+xml" }));
+});
+
+btnExportPng.addEventListener("click", () => {
+  exportPngBlob(svgEl, scene)
+    .then((blob) => download("wobblewerk.png", blob))
+    .catch(() => alert("PNG export failed"));
 });
 
 // ---- zoom & pan on #stage ----
