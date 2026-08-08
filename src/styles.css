@@ -1,0 +1,243 @@
+:root {
+  color-scheme: light;
+  --bg: #efece5;
+  --panel: #f7f5ef;
+  --border: #d8d3c6;
+  --text: #2c2a26;
+  --text-dim: #6b6759;
+  --accent: #4a90d9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ---- topbar ---- */
+
+#topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 48px;
+  padding: 0 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+#palette-strip,
+#topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#topbar button,
+#palette-select {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+#topbar button:hover,
+#palette-select:hover {
+  background: var(--panel);
+}
+
+#topbar button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---- body layout ---- */
+
+#body {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+
+#rail {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+#tools {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#tools button {
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+#tools button[data-active="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+#param-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+#hand-dial {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+#hand-dial input[type="range"] {
+  width: 100%;
+}
+
+/* ---- stage ---- */
+
+#stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+#stage.panning-ready {
+  cursor: grab;
+}
+
+#stage.panning {
+  cursor: grabbing;
+}
+
+svg#sheet {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+svg#sheet rect.paper {
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.18));
+}
+
+/* stroke hit-testing only enabled while the select tool is active */
+svg#sheet g.strokes {
+  pointer-events: none;
+}
+
+svg#sheet.tool-select g.strokes {
+  pointer-events: auto;
+}
+
+#vintage-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-size: 13px;
+}
+
+#vintage-banner[hidden] {
+  display: none;
+}
+
+#vintage-banner button {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* ---- new-sheet dialog ---- */
+
+#new-dialog {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  background: var(--panel);
+  color: var(--text);
+}
+
+#new-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+#new-dialog h2 {
+  margin: 0 0 14px;
+  font-size: 16px;
+}
+
+#new-dialog-options {
+  display: flex;
+  gap: 10px;
+}
+
+#new-dialog-options button {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 10px;
+  cursor: pointer;
+  text-align: center;
+}
+
+#new-dialog-options button:hover {
+  background: var(--bg);
+}
+
+#new-dialog-options small {
+  color: var(--text-dim);
+}

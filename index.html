@@ -4,9 +4,61 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>wobblewerk</title>
+    <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <header id="topbar">
+        <div id="palette-strip">
+          <select id="palette-select"></select>
+        </div>
+        <div id="topbar-actions">
+          <button id="btn-undo" type="button" title="Undo (Ctrl+Z)">Undo</button>
+          <button id="btn-redo" type="button" title="Redo (Ctrl+Shift+Z)">Redo</button>
+          <button id="btn-fit" type="button" title="Fit (Ctrl+0)">Fit</button>
+          <button id="btn-new" type="button" title="New">New</button>
+          <button id="btn-open" type="button" title="Open">Open</button>
+          <button id="btn-save" type="button" title="Save">Save</button>
+          <button id="btn-export-svg" type="button" title="Export SVG">Export SVG</button>
+          <button id="btn-export-png" type="button" title="Export PNG">Export PNG</button>
+          <input type="file" id="file-open" accept=".json" hidden />
+        </div>
+      </header>
+
+      <div id="body">
+        <aside id="rail">
+          <div id="tools">
+            <button type="button" data-tool="zigzag" data-active="true">Zigzag</button>
+            <button type="button" data-tool="hexpack">Hexpack</button>
+            <button type="button" data-tool="sunstamp">Sunstamp</button>
+            <button type="button" data-tool="select">Select</button>
+          </div>
+          <div id="param-panel"></div>
+          <div id="hand-dial">
+            <label for="hand-range">Hand</label>
+            <input type="range" id="hand-range" min="0" max="1" step="0.01" />
+          </div>
+        </aside>
+
+        <main id="stage">
+          <svg id="sheet" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div id="vintage-banner" hidden>
+            <span id="vintage-count"></span>
+            <button id="btn-regen-vintage" type="button">Regenerate</button>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <dialog id="new-dialog">
+      <h2>New sheet</h2>
+      <div id="new-dialog-options">
+        <button type="button" data-sheet="square">Square<br /><small>1600 &times; 1600</small></button>
+        <button type="button" data-sheet="portrait">Portrait<br /><small>1600 &times; 2000</small></button>
+        <button type="button" data-sheet="landscape">Landscape<br /><small>2000 &times; 1600</small></button>
+      </div>
+    </dialog>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
