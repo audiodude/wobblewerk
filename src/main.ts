@@ -1,6 +1,6 @@
 import { AppState, type Tool } from "./ui/app-state";
 import { installDrawing } from "./ui/draw";
-import { deleteSelected, renderPanel, rerollSelected, type PanelDeps } from "./ui/panel";
+import { deleteSelected, flushPendingEdit, renderPanel, rerollSelected, type PanelDeps } from "./ui/panel";
 import { getStroke, newScene, reslotStroke, seedIdCounter, setPalette } from "./engine/scene";
 import { History } from "./engine/history";
 import { autosave, flushAutosave, loadAutosave } from "./engine/persist";
@@ -147,6 +147,7 @@ function select(id: string): void {
 
 function deselect(): void {
   if (appState.selection === null) return;
+  flushPendingEdit(panelDeps); // commit a live-but-uncommitted slider edit before tearing the panel down
   appState.selection = null;
   renderer.setSelection(scene, null);
   refreshPanel();
@@ -170,6 +171,10 @@ function setActiveTool(tool: Tool): void {
     b.dataset.active = String(b.dataset.tool === tool);
   });
   svgEl.classList.toggle("tool-select", tool === "select");
+  renderer.clearLive(); // keyboard switches (1/2/3/v) don't get draw.ts's reactive mousemove-driven clear
+  // Product ruling: leaving select always deselects — tool switch is a fresh start, not a lingering
+  // edit context. deselect() no-ops if nothing's selected, so this is cheap on the common path.
+  if (tool !== "select") deselect();
   refreshPanel();
 }
 toolButtons.forEach((b) => b.addEventListener("click", () => setActiveTool(b.dataset.tool as Tool)));
@@ -356,7 +361,7 @@ window.addEventListener("keydown", (e) => {
     setActiveTool(tool);
     return;
   }
-  if (e.key === "r") {
+  if (e.key.toLowerCase() === "r") {
     rerollSelected(panelDeps, brushParams);
   } else if (e.key === "Delete" || e.key === "Backspace") {
     deleteSelected(panelDeps, brushParams);

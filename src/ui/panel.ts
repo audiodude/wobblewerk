@@ -18,6 +18,22 @@ function toolBrushId(tool: Tool): string | null {
   return tool === "select" ? null : tool;
 }
 
+// Tracks a live-but-uncommitted reparamStroke edit from an in-progress slider
+// drag on a SELECTED stroke (tool-param sliders never commit, so this only
+// ever applies in selection mode). Set on `input`, cleared on `change`
+// (normal release) or by flushPendingEdit (abnormal teardown, e.g. Escape
+// mid-drag) — either way a drag always resolves into exactly one commit.
+let pendingEdit = false;
+
+/** Commits a live-but-uncommitted slider edit, if any. Call before any teardown
+ * that clears the selection (deselect, tool switch) so a mid-drag Escape/switch
+ * doesn't silently fold the partial edit into some later, unrelated commit. */
+export function flushPendingEdit(deps: PanelDeps): void {
+  if (!pendingEdit) return;
+  deps.commit();
+  pendingEdit = false;
+}
+
 function slider(
   def: ParamDef,
   value: number,
@@ -132,16 +148,34 @@ function renderSelectionPanel(
         stroke.id,
         vintage,
         (v) => {
+          if (vintage) return; // defense-in-depth: the input is disabled, but don't rely on that alone
           reparamStroke(deps.getScene(), stroke.id, { ...stroke.params, [def.key]: v });
           deps.liveUpdate();
+          pendingEdit = true;
         },
-        () => deps.commit(),
+        () => {
+          if (vintage) return;
+          // Removing a mid-drag range input from the DOM (e.g. flushPendingEdit tearing the
+          // panel down on Escape) makes the browser synthesize one last 'change' on the
+          // now-detached node. Without this guard that fires commit() a second, redundant
+          // time. pendingEdit is already false once flushPendingEdit has committed, so this
+          // stale event becomes a no-op instead of double-pushing the same history entry.
+          if (!pendingEdit) return;
+          deps.commit();
+          pendingEdit = false;
+        },
       ),
     );
   }
 }
 
 export function renderPanel(deps: PanelDeps, brushParams: Record<string, Record<string, number>>): void {
+  // A full render always discards the current slider DOM (and its closures),
+  // so any drag "in flight" against the previous render can no longer resolve
+  // via its own change handler. Reachable only through flushPendingEdit's own
+  // callers re-rendering afterward, at which point it's already been reset —
+  // this is just the belt-and-suspenders backstop.
+  pendingEdit = false;
   deps.container.replaceChildren();
 
   const selId = deps.state.selection;
@@ -151,6 +185,7 @@ export function renderPanel(deps: PanelDeps, brushParams: Record<string, Record<
     // Stale selection (shouldn't happen — callers keep state.selection in
     // sync with the live scene). Defensive: fall back to the no-selection panel.
     deps.state.selection = null;
+    deps.renderer.setSelection(deps.getScene(), null);
     renderPanel(deps, brushParams);
     return;
   }
