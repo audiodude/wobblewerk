@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { pathToD, runPipeline } from "../src/engine/generate";
 import { zigzag } from "../src/brushes/zigzag";
+import { hexpack } from "../src/brushes/hexpack";
+import { sunstamp } from "../src/brushes/sunstamp";
 import { defaultParams } from "../src/model/types";
 import type { BrushInput } from "../src/model/types";
 
@@ -42,5 +44,60 @@ describe("runPipeline", () => {
   });
   test("width scales with sheet size", () => {
     expect(runPipeline(zigzag, input, P, 1, 0, 3200)[0]!.width).toBeCloseTo(zigzag.strokeWidth * 2, 9);
+  });
+});
+
+describe("runPipeline degenerate-resample regression (finding 1)", () => {
+  const sunstampInput: BrushInput = { kind: "point", at: { x: 100, y: 100 } };
+  const SP = defaultParams(sunstamp);
+
+  test("sunstamp at hand 0.6, sheetW 2000 never throws and always yields parseable path data", () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      let baked: ReturnType<typeof runPipeline> = [];
+      expect(() => {
+        baked = runPipeline(sunstamp, sunstampInput, SP, seed, 0.6, 2000);
+      }).not.toThrow();
+      expect(baked.length).toBeGreaterThan(0);
+      for (const b of baked) {
+        expect(b.d.length).toBeGreaterThan(0);
+        expect(b.d).not.toContain("undefined");
+        expect(b.d).not.toContain("NaN");
+      }
+    }
+  });
+});
+
+describe("runPipeline param sanitization (finding 2)", () => {
+  const region: BrushInput = {
+    kind: "region",
+    points: Array.from({ length: 40 }, (_, i) => {
+      const a = (i / 40) * Math.PI * 2;
+      return { x: 400 + Math.cos(a) * 300, y: 400 + Math.sin(a) * 300 };
+    }),
+  };
+  const HP = defaultParams(hexpack);
+
+  test("negative cellSize is clamped, not left to drive an infinite packing loop", () => {
+    const start = Date.now();
+    const baked = runPipeline(hexpack, region, { cellSize: -5, looseness: 0.4, nucleus: 0.3, simplify: 0.5 }, 1, 0, 1600);
+    expect(Date.now() - start).toBeLessThan(5000);
+    expect(baked.length).toBeGreaterThan(0);
+    expect(baked.length).toBeLessThan(10000);
+  });
+
+  test("tiny cellSize (0.5) is clamped to a bounded output", () => {
+    const baked = runPipeline(hexpack, region, { ...HP, cellSize: 0.5 }, 1, 0, 1600);
+    expect(baked.length).toBeGreaterThan(0);
+    expect(baked.length).toBeLessThan(10000);
+  });
+
+  test("NaN or missing param falls back to the brush default", () => {
+    const withNaN = runPipeline(hexpack, region, { ...HP, cellSize: NaN }, 7, 0, 1600);
+    const { cellSize: _drop, ...withoutKey } = HP;
+    void _drop;
+    const withMissing = runPipeline(hexpack, region, withoutKey, 7, 0, 1600);
+    const withExplicitDefault = runPipeline(hexpack, region, HP, 7, 0, 1600);
+    expect(withNaN).toEqual(withExplicitDefault);
+    expect(withMissing).toEqual(withExplicitDefault);
   });
 });

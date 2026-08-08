@@ -28,8 +28,17 @@ export function handPass(paths: IdealPath[], amount: number, rng: Rng, sheetW = 
   return paths.map((path) => {
     const phase = rng() * 1000;
     const drift = rng() * 1000;
-    let pts = path.closed ? [...path.points, path.points[0]!] : path.points;
-    pts = resample(pts, step);
+    const original = path.closed ? [...path.points, path.points[0]!] : path.points;
+    let pts = resample(original, step);
+    // Degenerate resample (path length shorter than `step`, e.g. a tiny
+    // closed shape or a short open dash): fall back to the pre-resample
+    // points rather than manufacturing array holes downstream.
+    if (pts.length < 2 && original.length >= 2) pts = original.map((p) => ({ ...p }));
+    if (pts.length < 2) {
+      // Nothing sane to wobble (0 or 1 point in, even before resample) —
+      // pass it through unchanged.
+      return { points: pts.map((p) => ({ ...p })), closed: false, stroke: path.stroke, fill: path.fill };
+    }
     const out = pts.map((pt, i) => {
       const n = valueNoise1D(phase + (i * step) / 40);
       const m = valueNoise1D(drift + (i * step) / 90);
@@ -39,7 +48,10 @@ export function handPass(paths: IdealPath[], amount: number, rng: Rng, sheetW = 
     });
     if (path.closed && amount > 0.5) {
       const gapPts = Math.ceil(((amount - 0.5) * 12 * scale) / step);
-      out.length = Math.max(2, out.length - gapPts);
+      // Shrink-only: never grow the array (that manufactures an empty slot
+      // that later throws in pathToD). If trimming would go below 2 points,
+      // skip the trim rather than clamping up.
+      if (gapPts > 0 && out.length - gapPts >= 2) out.length -= gapPts;
     }
     return { points: out, closed: false, stroke: path.stroke, fill: path.fill };
   });

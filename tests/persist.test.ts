@@ -174,6 +174,30 @@ test("flushAutosave fires pending immediately and prevents double-write", () => 
   expect(storage.setItem).toHaveBeenCalledOnce(); // not called again
 });
 
+test("autosave swallows a QuotaExceededError from setItem instead of dying uncaught (finding 3)", () => {
+  const scene = mkScene();
+  const setItem = vi.fn(() => {
+    throw new DOMException("quota exceeded", "QuotaExceededError");
+  });
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  autosave(scene, { setItem });
+  expect(() => vi.advanceTimersByTime(300)).not.toThrow();
+  expect(setItem).toHaveBeenCalledOnce();
+  warn.mockRestore();
+});
+
+test("flushAutosave also swallows a QuotaExceededError", () => {
+  const scene = mkScene();
+  const setItem = vi.fn(() => {
+    throw new DOMException("quota exceeded", "QuotaExceededError");
+  });
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  autosave(scene, { setItem });
+  expect(() => flushAutosave()).not.toThrow();
+  expect(setItem).toHaveBeenCalledOnce();
+  warn.mockRestore();
+});
+
 test("autosave and loadAutosave without storage argument in headless environment", () => {
   const scene = mkScene();
   expect(() => autosave(scene)).not.toThrow();

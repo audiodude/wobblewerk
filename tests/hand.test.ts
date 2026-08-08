@@ -46,6 +46,48 @@ describe("handPass", () => {
   });
 });
 
+describe("handPass degenerate resample (finding 1)", () => {
+  test("tiny closed octagon (perimeter < step) never throws and yields finite points", () => {
+    // Mirrors sunstamp's dash-ring satellite dot: an 8-gon with radius 1.5,
+    // whose perimeter (~9.18) is shorter than the resample step at sheetW
+    // 2000 (step = 8 * 2000/1600 = 10).
+    const octagon: IdealPath = {
+      points: Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * Math.PI * 2;
+        return { x: 50 + Math.cos(a) * 1.5, y: 50 + Math.sin(a) * 1.5 };
+      }),
+      closed: true, stroke: true, fill: false,
+    };
+    let result: IdealPath[] = [];
+    expect(() => {
+      result = handPass([octagon], 0.9, rngFromSeed(1), 2000);
+    }).not.toThrow();
+    const pts = result[0]!.points;
+    expect(pts.length).toBeGreaterThanOrEqual(1);
+    for (const p of pts) {
+      expect(Number.isFinite(p.x)).toBe(true);
+      expect(Number.isFinite(p.y)).toBe(true);
+    }
+  });
+
+  test("tiny open 2-point segment (shorter than spacing/4) yields >= 2 finite points", () => {
+    const tinyDash: IdealPath = {
+      points: [{ x: 0, y: 0 }, { x: 0.5, y: 0 }],
+      closed: false, stroke: true, fill: false,
+    };
+    let result: IdealPath[] = [];
+    expect(() => {
+      result = handPass([tinyDash], 0.9, rngFromSeed(1), 2000);
+    }).not.toThrow();
+    const pts = result[0]!.points;
+    expect(pts.length).toBeGreaterThanOrEqual(2);
+    for (const p of pts) {
+      expect(Number.isFinite(p.x)).toBe(true);
+      expect(Number.isFinite(p.y)).toBe(true);
+    }
+  });
+});
+
 test("valueNoise1D deterministic and bounded", () => {
   expect(valueNoise1D(3.7)).toBe(valueNoise1D(3.7));
   for (let t = 0; t < 50; t += 0.13) {

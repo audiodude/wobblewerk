@@ -88,7 +88,15 @@ export function autosave(scene: Scene, storage: Pick<Storage, "setItem"> | undef
   const store = storage ?? defaultStorage();
   if (!store) return;
   clearTimeout(timer);
-  pending = () => store.setItem(AUTOSAVE_KEY, serializeScene(scene));
+  pending = () => {
+    try {
+      store.setItem(AUTOSAVE_KEY, serializeScene(scene));
+    } catch (err) {
+      // e.g. QuotaExceededError — autosave is best-effort; don't let a full
+      // storage quota crash the timer callback and kill future autosaves.
+      console.warn("wobblewerk: autosave failed", err);
+    }
+  };
   timer = setTimeout(() => { pending?.(); pending = undefined; }, 300);
 }
 
