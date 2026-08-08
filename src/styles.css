@@ -144,6 +144,36 @@ button {
   color: #fff;
 }
 
+/* Icon-button row (select tool + future friends), top-left of the rail */
+#tool-icons {
+  display: flex;
+  justify-content: flex-start;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+#tools #tool-icons button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background: #4a4a48;
+  border-color: #4a4a48;
+  color: #fff;
+}
+
+#tools #tool-icons button:hover {
+  background: #5c5c5a;
+  border-color: #5c5c5a;
+}
+
+#tools #tool-icons button[data-active="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
 #param-panel {
   display: flex;
   flex-direction: column;
