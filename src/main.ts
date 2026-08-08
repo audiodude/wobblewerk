@@ -1,4 +1,5 @@
 import { AppState, type Tool } from "./ui/app-state";
+import { installDrawing } from "./ui/draw";
 import { newScene, seedIdCounter, setPalette } from "./engine/scene";
 import { History } from "./engine/history";
 import { autosave, flushAutosave, loadAutosave } from "./engine/persist";
@@ -6,7 +7,10 @@ import { SheetRenderer } from "./render/svg";
 import { ViewBox } from "./render/viewport";
 import { PALETTES } from "./model/palettes";
 import { exportSvgString } from "./export/svg";
+import { BRUSHES } from "./brushes/index";
+import { defaultParams } from "./model/types";
 import type { Scene } from "./model/types";
+import type { XY } from "./model/geometry";
 
 declare global {
   interface Window {
@@ -42,6 +46,14 @@ const renderer = new SheetRenderer(svgEl);
 let vb = new ViewBox(scene.sheet.w, scene.sheet.h);
 const history = new History();
 const appState = new AppState();
+
+// Per-brush param values, owned here so Task 18's panel can bind to the same map.
+export const brushParams: Record<string, Record<string, number>> = Object.fromEntries(
+  Object.values(BRUSHES).map((b) => [b.id, defaultParams(b)]),
+);
+function getParams(brushId: string): Record<string, number> {
+  return brushParams[brushId] ?? {};
+}
 
 function applyViewBox(): void {
   svgEl.setAttribute("viewBox", vb.toString());
@@ -161,13 +173,19 @@ newDialog.querySelectorAll<HTMLButtonElement>("button[data-sheet]").forEach((btn
 
 // ---- zoom & pan on #stage ----
 
+function clientToSheet(e: { clientX: number; clientY: number }): XY {
+  const rect = svgEl.getBoundingClientRect();
+  return {
+    x: vb.x + ((e.clientX - rect.left) / rect.width) * vb.w,
+    y: vb.y + ((e.clientY - rect.top) / rect.height) * vb.h,
+  };
+}
+
 stageEl.addEventListener(
   "wheel",
   (e: WheelEvent) => {
     e.preventDefault();
-    const rect = svgEl.getBoundingClientRect();
-    const sheetX = vb.x + ((e.clientX - rect.left) / rect.width) * vb.w;
-    const sheetY = vb.y + ((e.clientY - rect.top) / rect.height) * vb.h;
+    const { x: sheetX, y: sheetY } = clientToSheet(e);
     const factor = e.deltaY < 0 ? 1 / 1.1 : 1.1;
     vb.zoomAt(sheetX, sheetY, factor);
     applyViewBox();
@@ -220,6 +238,23 @@ window.addEventListener("mousemove", (e) => {
 window.addEventListener("mouseup", () => {
   panning = false;
   stageEl.classList.remove("panning");
+});
+
+// ---- drawing ----
+
+installDrawing({
+  svg: svgEl,
+  getScene: () => scene,
+  state: appState,
+  renderer,
+  clientToSheet,
+  getParams,
+  // spaceDown (not `panning`) — pointerdown fires before the stageEl "mousedown"
+  // handler that flips `panning` true, so gating on `panning` would race and let
+  // a space+drag start a brush stroke on the very first frame. spaceDown is set
+  // by keydown, strictly earlier than any click in the same pan gesture.
+  isPanning: () => spaceDown,
+  commit,
 });
 
 // ---- misc ----
