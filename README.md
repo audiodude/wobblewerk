@@ -8,6 +8,16 @@ A web-based procedural sketch **instrument** — draw gestures; brushes render t
 
 No moving, resizing, rotating, bezier editing, or alignment tools. If you need that level of control, **export your drawing as SVG and open it in Inkscape.** The two tools compose perfectly — we never try to be a worse Inkscape.
 
+## New Sheet
+
+On first launch, choose your sheet size:
+
+- **Square**: 1600×1600 px
+- **Portrait**: 1600×2000 px (tall, like a notebook page)
+- **Landscape**: 2000×1600 px (wide)
+
+The size picker also appears via the `New` button. Creating a new sheet or opening a file is an **undoable boundary** — `Ctrl+Z` restores your previous drawing completely.
+
 ## Drawing
 
 | Key/Action | Purpose |
@@ -56,12 +66,12 @@ Click to place a sun: wobbly circle ringed by dots or dashes. Ghost preview foll
 
 Preset color schemes (select from the palette strip or dropdown):
 
-- **Notebook** (page 1): white paper; teal, orange, purple, magenta, olive inks. Strokes auto-rotate through them.
+- **Notebook** (page 1): white paper; teal, orange, purple, magenta, olive inks.
 - **Ballpoint** (page 2): white paper; single dark violet-blue ink.
 - **Blackwork**: white paper; black ink only.
 - **Bauhaus**: cream paper; red, black, mustard, deep blue inks.
 
-Click an ink swatch to pin it; click the `auto` chip to resume rotation.
+By default, each new stroke rotates through available inks automatically. Click an ink swatch to pin upcoming strokes to that color; click the `auto` chip to resume rotation. Selected strokes can be re-slotted to any ink.
 
 ## Hand Dial
 
