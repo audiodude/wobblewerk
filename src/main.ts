@@ -15,7 +15,7 @@ import { History } from "./engine/history";
 import { autosave, flushAutosave, loadAutosave } from "./engine/persist";
 import { SheetRenderer } from "./render/svg";
 import { ViewBox } from "./render/viewport";
-import { PALETTES } from "./model/palettes";
+import { getPalette, PALETTES } from "./model/palettes";
 import { exportSvgString } from "./export/svg";
 import { BRUSHES } from "./brushes/index";
 import { defaultParams } from "./model/types";
@@ -218,6 +218,14 @@ syncPaletteSelect();
 
 function onPaletteChange(id: string): void {
   setPalette(scene, id);
+  // A pin means "this specific ink slot" — if the new palette doesn't have
+  // that many inks, the slot no longer refers to anything. Reset to auto
+  // rather than clamping into some other color the user didn't choose;
+  // refreshChrome() (via commit(), below) repaints the strip with the auto
+  // chip active and no ring, so the UI stays truthful to the actual state.
+  if (appState.pinnedSlot !== null && appState.pinnedSlot > getPalette(id).inks.length) {
+    appState.pinnedSlot = null;
+  }
   renderer.renderScene(scene);
   applyViewBox();
   syncSelectionAfterSceneReplace();
