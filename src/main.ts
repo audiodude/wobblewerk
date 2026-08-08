@@ -106,30 +106,35 @@ function commit(): void {
   refreshChrome();
 }
 
-function doUndo(): void {
-  const next = history.undo();
-  if (!next) return;
+// Shared by undo/redo: both just move within the existing snapshot stack (no
+// history.push — that would be a new branch, not a navigation). Sheet
+// dimensions can differ across a crossed New/Open boundary (both are now
+// undoable document boundaries — see New-sheet and openFile below), so the
+// ViewBox only gets rebuilt + re-fit when the sheet size actually changed;
+// otherwise the existing vb (and the user's current pan/zoom) is preserved.
+function applySceneFromHistory(next: Scene): void {
+  const prevSheet = scene.sheet;
   scene = next;
   seedIdCounter(scene);
+  const sheetChanged = scene.sheet.w !== prevSheet.w || scene.sheet.h !== prevSheet.h;
+  if (sheetChanged) vb = new ViewBox(scene.sheet.w, scene.sheet.h);
   renderer.renderScene(scene);
-  applyViewBox();
+  if (sheetChanged) doFit();
+  else applyViewBox();
   syncPaletteSelect();
   syncSelectionAfterSceneReplace();
   autosave(scene);
   refreshChrome();
 }
 
+function doUndo(): void {
+  const next = history.undo();
+  if (next) applySceneFromHistory(next);
+}
+
 function doRedo(): void {
   const next = history.redo();
-  if (!next) return;
-  scene = next;
-  seedIdCounter(scene);
-  renderer.renderScene(scene);
-  applyViewBox();
-  syncPaletteSelect();
-  syncSelectionAfterSceneReplace();
-  autosave(scene);
-  refreshChrome();
+  if (next) applySceneFromHistory(next);
 }
 
 btnUndo.addEventListener("click", doUndo);
@@ -300,7 +305,9 @@ newDialog.querySelectorAll<HTMLButtonElement>("button[data-sheet]").forEach((btn
     scene = newScene(preset.w, preset.h);
     seedIdCounter(scene);
     vb = new ViewBox(scene.sheet.w, scene.sheet.h);
-    history.reset(scene);
+    // New Sheet is an undoable document boundary, not a hard reset — Ctrl+Z
+    // brings back the drawing that was open before New was clicked.
+    history.push(scene);
     autosave(scene);
     renderer.renderScene(scene);
     doFit();
@@ -323,22 +330,36 @@ btnOpen.addEventListener("click", () => fileOpenInput.click());
 // only ever reads stroke.baked (see render/svg.ts's inkAttrs), never calls
 // setHand/bakeStroke/migrate, so this path can't accidentally re-bake.
 async function openFile(file: File): Promise<void> {
+  // Atomic: everything that can throw (parse/validate, ViewBox construction —
+  // a structurally-malformed-but-version-1 file can still have a garbage
+  // sheet) happens here, into locals, before any real state is touched. Any
+  // throw falls through to the catch below; `scene`/`vb` are never reassigned
+  // on failure, so the current document is provably untouched.
   let opened: Scene;
+  let newVb: ViewBox;
   try {
     opened = deserializeScene(await file.text());
+    newVb = new ViewBox(opened.sheet.w, opened.sheet.h);
   } catch {
     alert("Not a wobblewerk file");
     return; // current scene untouched
   }
   scene = opened;
   seedIdCounter(scene);
-  vb = new ViewBox(scene.sheet.w, scene.sheet.h); // opened sheet may differ in size from the current one
-  history.reset(scene);
+  vb = newVb;
+  // Open is an undoable document boundary, not a hard reset — Ctrl+Z brings
+  // back the drawing that was open before Open was clicked.
+  history.push(scene);
   autosave(scene);
   renderer.renderScene(scene);
   doFit();
   syncPaletteSelect();
-  syncSelectionAfterSceneReplace();
+  // Opened files are a foreign document: their stroke ids (s1, s2, ...) can
+  // collide with the previous document's, so syncSelectionAfterSceneReplace's
+  // "same id = same stroke" check isn't safe here — a pre-open selection
+  // could silently attach its halo/panel to an unrelated stroke. Always
+  // deselect instead; deselect() itself no-ops if nothing was selected.
+  deselect();
   refreshChrome();
 }
 

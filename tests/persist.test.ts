@@ -26,6 +26,45 @@ test("deserialize rejects garbage and wrong versions", () => {
   expect(() => deserializeScene('{"version":2,"strokes":[]}')).toThrow("unsupported file");
 });
 
+test("deserialize rejects structurally-malformed version-1 files", () => {
+  // version 1 but no sheet at all — used to pass the old shallow check and
+  // blow up later (e.g. `new ViewBox(scene.sheet.w, ...)`) instead of here.
+  expect(() => deserializeScene('{"version":1,"strokes":[]}')).toThrow("unsupported file");
+
+  // sheet present but dims aren't numeric
+  expect(() =>
+    deserializeScene(
+      JSON.stringify({ version: 1, sheet: { w: "wide", h: 100 }, paletteId: "notebook", hand: 0.5, strokes: [] }),
+    ),
+  ).toThrow("unsupported file");
+
+  // non-positive sheet dims
+  expect(() =>
+    deserializeScene(
+      JSON.stringify({ version: 1, sheet: { w: 0, h: 100 }, paletteId: "notebook", hand: 0.5, strokes: [] }),
+    ),
+  ).toThrow("unsupported file");
+
+  // a stroke that isn't even an object
+  expect(() =>
+    deserializeScene(
+      JSON.stringify({ version: 1, sheet: { w: 100, h: 100 }, paletteId: "notebook", hand: 0.5, strokes: [null] }),
+    ),
+  ).toThrow("unsupported file");
+
+  // missing paletteId / hand
+  expect(() =>
+    deserializeScene(JSON.stringify({ version: 1, sheet: { w: 100, h: 100 }, strokes: [] })),
+  ).toThrow("unsupported file");
+
+  // a valid, minimal version-1 scene still passes
+  expect(() =>
+    deserializeScene(
+      JSON.stringify({ version: 1, sheet: { w: 100, h: 100 }, paletteId: "notebook", hand: 0.5, strokes: [] }),
+    ),
+  ).not.toThrow();
+});
+
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
