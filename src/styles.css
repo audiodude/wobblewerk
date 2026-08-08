@@ -75,6 +75,35 @@ button {
   cursor: default;
 }
 
+#palette-strip .swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+#palette-strip .swatch[data-pinned="true"] {
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent);
+}
+
+#palette-strip .swatch-auto {
+  width: auto;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 11px;
+  background: #fff;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+#palette-strip .swatch-auto[data-active="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 /* ---- body layout ---- */
 
 #body {

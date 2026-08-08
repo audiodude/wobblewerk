@@ -1,7 +1,16 @@
 import { AppState, type Tool } from "./ui/app-state";
+import { installChrome, refreshChrome as refreshChromeUI, type ChromeDeps } from "./ui/chrome";
 import { installDrawing } from "./ui/draw";
 import { deleteSelected, flushPendingEdit, renderPanel, rerollSelected, type PanelDeps } from "./ui/panel";
-import { getStroke, newScene, reslotStroke, seedIdCounter, setPalette } from "./engine/scene";
+import {
+  getStroke,
+  newScene,
+  regenerateAllVintage,
+  reslotStroke,
+  seedIdCounter,
+  setHand,
+  setPalette,
+} from "./engine/scene";
 import { History } from "./engine/history";
 import { autosave, flushAutosave, loadAutosave } from "./engine/persist";
 import { SheetRenderer } from "./render/svg";
@@ -30,7 +39,12 @@ const SHEET_PRESETS: Record<string, { w: number; h: number }> = {
 const svgEl = document.querySelector<SVGSVGElement>("#sheet")!;
 const stageEl = document.getElementById("stage")!;
 const newDialog = document.getElementById("new-dialog") as HTMLDialogElement;
+const paletteStripEl = document.getElementById("palette-strip") as HTMLElement;
 const paletteSelect = document.getElementById("palette-select") as HTMLSelectElement;
+const handDialInput = document.querySelector<HTMLInputElement>("#hand-dial input")!;
+const vintageBannerEl = document.getElementById("vintage-banner") as HTMLElement;
+const vintageCountEl = document.getElementById("vintage-count") as HTMLElement;
+const btnRegenVintage = document.getElementById("btn-regen-vintage") as HTMLButtonElement;
 const toolButtons = document.querySelectorAll<HTMLButtonElement>("#tools button[data-tool]");
 const btnUndo = document.getElementById("btn-undo") as HTMLButtonElement;
 const btnRedo = document.getElementById("btn-redo") as HTMLButtonElement;
@@ -75,7 +89,9 @@ if (!loaded) newDialog.showModal();
 // ---- history / commit (later tasks call this after any mutation) ----
 
 function refreshChrome(): void {
-  // Task 19 fills in: undo/redo disabled state, vintage banner visibility
+  btnUndo.disabled = !history.canUndo;
+  btnRedo.disabled = !history.canRedo;
+  refreshChromeUI(chromeDeps);
 }
 
 function commit(): void {
@@ -194,24 +210,71 @@ for (const p of PALETTES) {
 }
 syncPaletteSelect();
 
-paletteSelect.addEventListener("change", () => {
-  setPalette(scene, paletteSelect.value);
+// ---- chrome: palette strip, hand dial, vintage banner ----
+// src/ui/chrome.ts owns the DOM for these three widgets (swatch buttons, dial
+// listeners, banner visibility); this section only supplies the callbacks
+// that decide what a click/drag/change *means* for the scene — same split as
+// panelDeps/PanelDeps above.
+
+function onPaletteChange(id: string): void {
+  setPalette(scene, id);
   renderer.renderScene(scene);
   applyViewBox();
   syncSelectionAfterSceneReplace();
   commit();
-});
+}
 
-// ---- palette swatch hook ----
-// The palette strip itself is Task 19's; this is the seam it wires into.
-// For now this only handles the "reslot the current selection" case — the
-// pin/auto-rotate behavior for when nothing is selected is Task 19's to add.
+// Swatch click: re-slot the current selection if one exists; else toggle the
+// pin (clicking the already-pinned swatch again unpins it — back to auto-
+// rotate). The auto chip itself is chrome.ts's own concern (just sets
+// pinnedSlot = null unconditionally, no selection branch).
 export function onSwatchClick(slot: number): void {
-  if (!appState.selection) return; // TODO(Task 19): pin/auto-rotate with no selection
-  reslotStroke(scene, appState.selection, slot);
-  liveUpdate();
+  if (appState.selection) {
+    reslotStroke(scene, appState.selection, slot);
+    liveUpdate();
+    commit();
+    return;
+  }
+  appState.pinnedSlot = appState.pinnedSlot === slot ? null : slot;
+  refreshChrome();
+}
+
+function onHandInput(v: number): void {
+  setHand(scene, v);
+  renderer.renderScene(scene);
+  applyViewBox();
+  renderer.setSelection(scene, appState.selection); // renderScene() wipes g.overlay — same fix as syncSelectionAfterSceneReplace
+}
+
+function onHandCommit(): void {
   commit();
 }
+
+function onRegenVintage(): void {
+  regenerateAllVintage(scene);
+  renderer.renderScene(scene);
+  applyViewBox();
+  renderer.setSelection(scene, appState.selection);
+  commit(); // vintageCount() is now 0 — refreshChrome() (via commit) hides the banner
+}
+
+const chromeDeps: ChromeDeps = {
+  paletteStrip: paletteStripEl,
+  paletteSelect,
+  handDial: handDialInput,
+  banner: vintageBannerEl,
+  bannerCount: vintageCountEl,
+  bannerRegen: btnRegenVintage,
+  getScene: () => scene,
+  state: appState,
+  onSwatchClick,
+  onPaletteChange,
+  onHandInput,
+  onHandCommit,
+  onRegenVintage,
+};
+installChrome(chromeDeps);
+refreshChrome(); // initial paint: swatch strip, hand dial position, banner hidden, undo/redo disabled
 
 // ---- new-sheet dialog ----
 
