@@ -1,6 +1,8 @@
 # Wobblewerk
 
-A web-based procedural sketch **instrument** — draw gestures; brushes render them in your notebook's visual language: wobbly zigzags, hex-packed regions, and sun glyphs.
+![wobblewerk — fun abstract drawing toy](public/og.png)
+
+A fun sketching **instrument**/toy — wobbly zigzags, hex-packed regions, sun glyphs. Free, web-based, and not a freeform drawing tool by any means.
 
 ## The Covenant
 
@@ -107,7 +109,7 @@ Requirements: Node.js (modern, tested with asdf-managed versions).
 
 **v1 feature-complete.** Not yet deployed; will live at `wobble.audiodude.xyz`.
 
-77 unit tests + 1 e2e smoke test, all passing. Gate 1 (verification) complete.
+89 unit tests + 1 e2e smoke test, all passing. Gate 1 (verification) complete.
 
 ## Branding
 
