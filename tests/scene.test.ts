@@ -67,4 +67,31 @@ describe("scene", () => {
     expect(scene.paletteId).toBe("bauhaus");
     expect(s.baked[0]!.d).toBe(frozen);
   });
+  test("missing brush stays vintage; mutations don't throw or rebake", () => {
+    const { scene, s } = mk();
+    s.brush = "ghost"; // simulate deleted brush
+    expect(isVintage(s)).toBe(true);
+    const frozenBake = s.baked[0]!.d, frozenSeed = s.seed;
+
+    // Add a real-brush stroke that should migrate
+    const s2 = addStroke(scene, { brush: "zigzag", input, seed: 99, params: defaultParams(zigzag), colorSlot: 2 });
+    s2.brushVersion = 999; // make it vintage
+    const s2VersionBefore = s2.brushVersion;
+
+    // regenerateAllVintage must not throw and must not rebake the ghost stroke, but MUST migrate s2
+    regenerateAllVintage(scene);
+    expect(s.baked[0]!.d).toBe(frozenBake);
+    expect(s.seed).toBe(frozenSeed);
+    expect(isVintage(s)).toBe(true);
+    expect(s2.brushVersion).not.toBe(s2VersionBefore); // real stroke migrated (version updated)
+
+    // rerollStroke should not throw or burn seed for missing brush
+    rerollStroke(scene, s.id);
+    expect(s.seed).toBe(frozenSeed);
+    expect(s.baked[0]!.d).toBe(frozenBake);
+
+    // reparamStroke should not throw for missing brush
+    expect(() => reparamStroke(scene, s.id, { ...s.params })).not.toThrow();
+    expect(s.baked[0]!.d).toBe(frozenBake);
+  });
 });

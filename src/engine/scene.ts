@@ -50,6 +50,7 @@ export function vintageCount(scene: Scene): number {
 }
 
 function migrate(scene: Scene, stroke: Stroke): void {
+  if (!BRUSHES[stroke.brush]) return; // brush gone: stroke stays vintage, bake preserved
   stroke.brushVersion = getBrush(stroke.brush).version;
   bakeStroke(scene, stroke);
 }
@@ -57,6 +58,7 @@ function migrate(scene: Scene, stroke: Stroke): void {
 export function rerollStroke(scene: Scene, id: string): void {
   const s = getStroke(scene, id);
   if (!s) return;
+  if (s && !BRUSHES[s.brush]) return; // brush gone: stroke stays vintage, don't burn seed
   s.seed = randomSeed();
   migrate(scene, s);
 }
