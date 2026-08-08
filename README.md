@@ -4,23 +4,18 @@
 
 A fun sketching **instrument**/toy — wobbly zigzags, hex-packed regions, sun glyphs. Free, web-based, and not a freeform drawing tool by any means.
 
-## The Covenant
+## Features
 
-**Wobblewerk is an instrument, not an editor.** You draw, adjust, and re-roll strokes. That is all.
+* Move quick, scribble, inspire yourself, break things, undo.
+* Procedurally generated strokes/paths: tweak the parameters before or after
+* Opinionated color pallettes. Limitations are inspiring!
+* Export to PNG for quick sharing, or SVG for further editing in Illustrator/Inkscape
 
-No moving, resizing, rotating, bezier editing, or alignment tools. If you need that level of control, **export your drawing as SVG and open it in Inkscape.** The two tools compose perfectly — we never try to be a worse Inkscape.
+## Vibe Coded
 
-## New Sheet
+Yes this was unapologetically vibe coded with Claude Fable 5 on xhigh effort. After an initial 20 minute spec session (shoutout to [superpowers](https://github.com/obra/superpowers) and [grill-me](https://github.com/mattpocock/skills)), the agent finished a near perfect final product in 4 hours and 23 minutes, overnight. 30 minute tweaking session and here we are.
 
-On first launch, choose your sheet size:
-
-- **Square**: 1600×1600 px
-- **Portrait**: 1600×2000 px (tall, like a notebook page)
-- **Landscape**: 2000×1600 px (wide)
-
-The size picker also appears via the `New` button. Creating a new sheet or opening a file is an **undoable boundary** — `Ctrl+Z` restores your previous drawing completely.
-
-## Drawing
+## Shortcuts
 
 | Key/Action | Purpose |
 |---|---|
@@ -33,7 +28,19 @@ The size picker also appears via the `New` button. Creating a new sheet or openi
 | Mouse wheel | Zoom (0.25× to 8×) |
 | `Space` + drag | Pan viewport |
 
-## Brushes
+## Saving your work
+
+Wobblewerk saves its native format to `.json` files.
+
+- **Autosave** (~300ms debounce): stored directly in your browser. Open the page again sometime and it's still there. Refresh never loses work.
+- **Save/Open**: download full `.json` or load one via file dialog.
+
+### Export
+
+- **SVG**: full drawing, palette colors baked in, opens cleanly in Inkscape.
+- **PNG**: rasterized at 2× resolution. Optional clip to image boundaries.
+
+## Brushes/Tools/Strokes Reference
 
 Each stroke is a seeded recipe: change the seed, adjust up to 4 parameters, or re-color it.
 
@@ -64,34 +71,7 @@ Click to place a sun: wobbly circle ringed by dots or dashes. Ghost preview foll
 - **ringDistance** (0–1, default 0.4): gap between circle and satellites
 - **dashMix** (0–1, default 0.2): 0 = all dots, 1 = all dashes
 
-## Palettes
-
-Preset color schemes (select from the palette strip or dropdown):
-
-- **Notebook** (page 1): white paper; teal, orange, purple, magenta, olive inks.
-- **Ballpoint** (page 2): white paper; single dark violet-blue ink.
-- **Blackwork**: white paper; black ink only.
-- **Bauhaus**: cream paper; red, black, mustard, deep blue inks.
-
-By default, each new stroke rotates through available inks automatically. Click an ink swatch to pin upcoming strokes to that color; click the `auto` chip to resume rotation. Selected strokes can be re-slotted to any ink.
-
-## Hand Dial
-
-Drag the **hand** dial (left panel, 0–1) to sweep your sheet from crisp/clean (0) to notebook-sketch loose (1). Hand wobble is globally live and undoable. Vintage strokes (from older brush versions) render from their baked geometry and aren't affected by hand changes until regenerated.
-
-## Files
-
-Wobblewerk saves to `.json` files — recipe + baked geometry, self-contained and small:
-
-- **Autosave** (~300ms debounce): stored in browser localStorage. Refresh never loses work.
-- **Save/Open**: download full `.json` or load one via file dialog.
-- **Vintage policy**: old strokes render from their baked geometry forever (pixel-faithful). When you update a brush, strokes created with an older version show a "regenerate to edit" prompt. Update them with the banner button or by re-rolling individually — completely undoable.
-
-## Export
-
-- **SVG**: full drawing, palette colors baked in, opens cleanly in Inkscape.
-- **PNG**: rasterized at 2× resolution. A dialog asks "Clip to image boundaries?" — **Yes** trims the PNG to the artwork's bounding box (small margin, clamped to the sheet); **No** exports the full sheet.
-- Saves and exports download with timestamped names: `wobblewerk 2026-08-08 14-32.png`.
+---
 
 ## Development
 
@@ -105,16 +85,8 @@ npm run e2e      # Run end-to-end tests (Playwright)
 
 Requirements: Node.js (modern, tested with asdf-managed versions).
 
-## Status
-
-**v1 feature-complete.** Not yet deployed; will live at `wobble.audiodude.xyz`.
-
-89 unit tests + 1 e2e smoke test, all passing. Gate 1 (verification) complete.
-
-## Branding
-
-`public/favicon.svg` (zigzag staircase mark) and `public/og.png` (social card — the background art was drawn by wobblewerk itself). OG/meta tags live in `index.html`.
-
 ---
 
-Made with wobbles and intention. Draw.
+Made with whimsy by [Travis Briggs](https://travisbriggs.com).
+
+MIT License
