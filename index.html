@@ -4,11 +4,31 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>wobblewerk</title>
+    <meta name="description" content="A wobbly little drawing machine — gestures in, notebook zigzags, hexagon packs, and sun doodles out. Re-roll the dice, sweep the hand dial, export SVG." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://wobble.audiodude.xyz/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="wobblewerk" />
+    <meta property="og:title" content="wobblewerk" />
+    <meta property="og:description" content="A wobbly little drawing machine — gestures in, notebook zigzags, hexagon packs, and sun doodles out." />
+    <meta property="og:url" content="https://wobble.audiodude.xyz/" />
+    <meta property="og:image" content="https://wobble.audiodude.xyz/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
     <div id="app">
       <header id="topbar">
+        <div id="logo" title="wobblewerk">
+          <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+            <path d="M5 25 L10 25 L10 20 L14 20 L14 16 L19 16 L19 11 L23 11 L23 8 L27 8"
+                  fill="none" stroke="#2a9d8f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="25" cy="24" r="2.4" fill="#f4743b"/>
+          </svg>
+          <span>wobblewerk</span>
+        </div>
         <div id="topbar-nav">
           <button id="btn-undo" type="button" title="Undo (Ctrl+Z)">Undo</button>
           <button id="btn-redo" type="button" title="Redo (Ctrl+Shift+Z)">Redo</button>
@@ -42,9 +62,9 @@
             <button type="button" data-tool="sunstamp">Sunstamp</button>
           </div>
           <div id="param-panel"></div>
-          <div class="rail-divider">Global</div>
+          <div class="rail-divider">global</div>
           <div id="hand-dial">
-            <label for="hand-range">Hand</label>
+            <label for="hand-range">hand</label>
             <input type="range" id="hand-range" min="0" max="1" step="0.01" />
           </div>
         </aside>
@@ -64,6 +84,7 @@
       <div id="png-dialog-options">
         <button type="button" id="png-clip-yes">Yes &mdash; trim to artwork</button>
         <button type="button" id="png-clip-no">No &mdash; full sheet</button>
+        <button type="button" id="png-clip-cancel">Cancel</button>
       </div>
     </dialog>
 

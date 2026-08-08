@@ -396,6 +396,7 @@ function doPngExport(clip?: ReturnType<typeof artworkClip>): void {
 btnExportPng.addEventListener("click", () => pngDialog.showModal());
 document.getElementById("png-clip-yes")!.addEventListener("click", () => doPngExport(artworkClip(scene)));
 document.getElementById("png-clip-no")!.addEventListener("click", () => doPngExport());
+document.getElementById("png-clip-cancel")!.addEventListener("click", () => pngDialog.close());
 
 // ---- zoom & pan on #stage ----
 

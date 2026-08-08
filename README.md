@@ -109,6 +109,10 @@ Requirements: Node.js (modern, tested with asdf-managed versions).
 
 77 unit tests + 1 e2e smoke test, all passing. Gate 1 (verification) complete.
 
+## Branding
+
+`public/favicon.svg` (zigzag staircase mark) and `public/og.png` (social card — the background art was drawn by wobblewerk itself). OG/meta tags live in `index.html`.
+
 ---
 
 Made with wobbles and intention. Draw.

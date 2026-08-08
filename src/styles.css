@@ -41,7 +41,6 @@ button {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   height: 48px;
   padding: 0 12px;
@@ -49,11 +48,27 @@ button {
   border-bottom: 1px solid var(--border);
 }
 
+#logo {
+  /* spans the rail column below (220px + 1px border − 12px topbar padding) */
+  flex: 0 0 209px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: bold;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  user-select: none;
+}
+
 #topbar-nav,
 #topbar-actions {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+#topbar-actions {
+  margin-left: auto;
 }
 
 /* palette strip lives in the rail, above the tool icons */
@@ -176,13 +191,11 @@ button {
 
 .rail-divider {
   margin-top: 16px;
-  padding-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid var(--border);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: bold; /* matches #param-panel h3 */
+  color: var(--text);
 }
 
 #param-panel {
