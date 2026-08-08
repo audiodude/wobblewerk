@@ -27,7 +27,7 @@ The size picker also appears via the `New` button. Creating a new sheet or openi
 | `Delete` / `Backspace` | Delete selected stroke |
 | `Esc` | Deselect |
 | `Ctrl+Z` / `Ctrl+Shift+Z` | Undo / redo (snapshot history, 100 entries max) |
-| `Ctrl+0` | Fit sheet to window |
+| `Ctrl+0` | Reset zoom (fit sheet to window) |
 | Mouse wheel | Zoom (0.25× to 8×) |
 | `Space` + drag | Pan viewport |
 
