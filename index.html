@@ -4,13 +4,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>wobblewerk</title>
-    <meta name="description" content="A wobbly little drawing machine — gestures in, notebook zigzags, hexagon packs, and sun doodles out. Re-roll the dice, sweep the hand dial, export SVG." />
+    <meta
+      name="description"
+      content="An inspiring drawing toy for fun abstract line drawings. Turn gestures into zigzags and stamps. Re-roll the dice, tweak before and after, export SVG for next steps in Illustrator/Inkscape."
+    />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href="https://wobble.audiodude.xyz/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="wobblewerk" />
     <meta property="og:title" content="wobblewerk" />
-    <meta property="og:description" content="A wobbly little drawing machine — gestures in, notebook zigzags, hexagon packs, and sun doodles out." />
+    <meta
+      property="og:description"
+      content="An inspiring drawing toy for fun abstract line drawings. Turn gestures into zigzags and stamps."
+    />
     <meta property="og:url" content="https://wobble.audiodude.xyz/" />
     <meta property="og:image" content="https://wobble.audiodude.xyz/og.png" />
     <meta property="og:image:width" content="1200" />
@@ -23,23 +29,39 @@
       <header id="topbar">
         <div id="logo" title="wobblewerk">
           <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
-            <path d="M5 25 L10 25 L10 20 L14 20 L14 16 L19 16 L19 11 L23 11 L23 8 L27 8"
-                  fill="none" stroke="#2a9d8f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="25" cy="24" r="2.4" fill="#f4743b"/>
+            <path
+              d="M5 25 L10 25 L10 20 L14 20 L14 16 L19 16 L19 11 L23 11 L23 8 L27 8"
+              fill="none"
+              stroke="#2a9d8f"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <circle cx="25" cy="24" r="2.4" fill="#f4743b" />
           </svg>
           <span>wobblewerk</span>
         </div>
         <div id="topbar-nav">
-          <button id="btn-undo" type="button" title="Undo (Ctrl+Z)">Undo</button>
-          <button id="btn-redo" type="button" title="Redo (Ctrl+Shift+Z)">Redo</button>
-          <button id="btn-fit" type="button" title="Reset Zoom (Ctrl+0)">Reset Zoom</button>
+          <button id="btn-undo" type="button" title="Undo (Ctrl+Z)">
+            Undo
+          </button>
+          <button id="btn-redo" type="button" title="Redo (Ctrl+Shift+Z)">
+            Redo
+          </button>
+          <button id="btn-fit" type="button" title="Reset Zoom (Ctrl+0)">
+            Reset Zoom
+          </button>
         </div>
         <div id="topbar-actions">
           <button id="btn-new" type="button" title="New">New</button>
           <button id="btn-open" type="button" title="Open">Open</button>
           <button id="btn-save" type="button" title="Save">Save</button>
-          <button id="btn-export-svg" type="button" title="Export SVG">Export SVG</button>
-          <button id="btn-export-png" type="button" title="Export PNG">Export PNG</button>
+          <button id="btn-export-svg" type="button" title="Export SVG">
+            Export SVG
+          </button>
+          <button id="btn-export-png" type="button" title="Export PNG">
+            Export PNG
+          </button>
           <input type="file" id="file-open" accept=".json" hidden />
         </div>
       </header>
@@ -52,12 +74,20 @@
           <div id="tools">
             <div id="tool-icons">
               <button type="button" data-tool="select" title="Select (V)">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
                   <path d="M6 2v17l4.5-4.2 2.8 6.4 2.9-1.3-2.8-6.3 6.3-.6z" />
                 </svg>
               </button>
             </div>
-            <button type="button" data-tool="zigzag" data-active="true">Zigzag</button>
+            <button type="button" data-tool="zigzag" data-active="true">
+              Zigzag
+            </button>
             <button type="button" data-tool="hexpack">Hexpack</button>
             <button type="button" data-tool="sunstamp">Sunstamp</button>
           </div>
@@ -82,7 +112,9 @@
     <dialog id="png-dialog">
       <h2>Clip to image boundaries?</h2>
       <div id="png-dialog-options">
-        <button type="button" id="png-clip-yes">Yes &mdash; trim to artwork</button>
+        <button type="button" id="png-clip-yes">
+          Yes &mdash; trim to artwork
+        </button>
         <button type="button" id="png-clip-no">No &mdash; full sheet</button>
         <button type="button" id="png-clip-cancel">Cancel</button>
       </div>
@@ -91,9 +123,15 @@
     <dialog id="new-dialog">
       <h2>New sheet</h2>
       <div id="new-dialog-options">
-        <button type="button" data-sheet="square">Square<br /><small>1600 &times; 1600</small></button>
-        <button type="button" data-sheet="portrait">Portrait<br /><small>1600 &times; 2000</small></button>
-        <button type="button" data-sheet="landscape">Landscape<br /><small>2000 &times; 1600</small></button>
+        <button type="button" data-sheet="square">
+          Square<br /><small>1600 &times; 1600</small>
+        </button>
+        <button type="button" data-sheet="portrait">
+          Portrait<br /><small>1600 &times; 2000</small>
+        </button>
+        <button type="button" data-sheet="landscape">
+          Landscape<br /><small>2000 &times; 1600</small>
+        </button>
       </div>
     </dialog>
 
