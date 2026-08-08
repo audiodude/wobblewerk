@@ -31,11 +31,12 @@ export const zigzag: BrushDef = {
     let guard = 0;
     while (idx + LOOKSTEPS <= spine.length - 1 && guard++ < 2000) {
       const target = spine[idx + LOOKSTEPS]!;
+      const seen = spine.slice(0, idx + LOOKSTEPS + 1);
       let run = Math.max(4, p.runLength! * (1 + (rng() * 2 - 1) * p.jaggedness!));
       let dir = horizontal ? Math.sign(target.x - pos.x) || 1 : Math.sign(target.y - pos.y) || 1;
       if (rng() < p.reversals! * 0.5) { dir = -dir; run *= 0.5; }
       let next: XY = horizontal ? { x: pos.x + dir * run, y: pos.y } : { x: pos.x, y: pos.y + dir * run };
-      if (nearestPointOnPolyline(next, spine).dist > corridor) {
+      if (nearestPointOnPolyline(next, seen).dist > corridor) {
         next = horizontal
           ? { x: pos.x + (Math.sign(target.x - pos.x) || 1) * Math.min(run, Math.abs(target.x - pos.x)), y: pos.y }
           : { x: pos.x, y: pos.y + (Math.sign(target.y - pos.y) || 1) * Math.min(run, Math.abs(target.y - pos.y)) };
