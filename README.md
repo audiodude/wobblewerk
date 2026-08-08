@@ -88,7 +88,8 @@ Wobblewerk saves to `.json` files — recipe + baked geometry, self-contained an
 ## Export
 
 - **SVG**: full drawing, palette colors baked in, opens cleanly in Inkscape.
-- **PNG**: rasterized at 2× sheet resolution.
+- **PNG**: rasterized at 2× resolution. A dialog asks "Clip to image boundaries?" — **Yes** trims the PNG to the artwork's bounding box (small margin, clamped to the sheet); **No** exports the full sheet.
+- Saves and exports download with timestamped names: `wobblewerk 2026-08-08 14-32.png`.
 
 ## Development
 

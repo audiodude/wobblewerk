@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { expect, test } from "vitest";
 import { exportSvgString } from "../src/export/svg";
+import { artworkClip, timestampName } from "../src/export/png";
+import type { Scene, Stroke } from "../src/model/types";
 import { SheetRenderer } from "../src/render/svg";
 import { addStroke, newScene } from "../src/engine/scene";
 import { defaultParams } from "../src/model/types";
@@ -30,4 +32,43 @@ test("exportSvgString: standalone, stripped of live/overlay/hit, sheet-sized", (
   expect(out).not.toContain("live");
   // original svg untouched
   expect(svg.querySelector("path.hit")).toBeTruthy();
+});
+
+const mkStroke = (d: string, width: number): Stroke => ({
+  id: "s1", brush: "zigzag", brushVersion: 1,
+  input: { kind: "path", points: [] }, seed: 1, params: {}, colorSlot: 1,
+  baked: [{ d, stroke: true, fill: false, width }],
+});
+
+test("artworkClip: ink bbox + half-width + margin, sheet-relative", () => {
+  const scene: Scene = { version: 1, sheet: { w: 1600, h: 2000 }, paletteId: "notebook", hand: 0, strokes: [] };
+  scene.strokes.push(mkStroke("M 100 200 L 300 400", 4));
+  // pad 2 (width/2) + margin 20 (sheetW 1600 → scale 1)
+  expect(artworkClip(scene)).toEqual({ x: 78, y: 178, w: 244, h: 244 });
+});
+
+test("artworkClip: clamps to sheet and handles empty scene", () => {
+  const scene: Scene = { version: 1, sheet: { w: 1600, h: 2000 }, paletteId: "notebook", hand: 0, strokes: [] };
+  expect(artworkClip(scene)).toBeNull();
+  scene.strokes.push(mkStroke("M 5 5 L 1595 1995", 4));
+  const clip = artworkClip(scene)!;
+  expect(clip.x).toBe(0);
+  expect(clip.y).toBe(0);
+  expect(clip.w).toBe(1600);
+  expect(clip.h).toBe(2000);
+});
+
+test("artworkClip: negative coords clamp to 0 and margin scales with sheet", () => {
+  const scene: Scene = { version: 1, sheet: { w: 3200, h: 3200 }, paletteId: "notebook", hand: 0, strokes: [] };
+  scene.strokes.push(mkStroke("M -50 100 L 200 300", 0));
+  const clip = artworkClip(scene)!; // margin 40 at sheetW 3200
+  expect(clip.x).toBe(0);
+  expect(clip.y).toBe(60);
+  expect(clip.w).toBe(240);
+  expect(clip.h).toBe(280);
+});
+
+test("timestampName formats yyyy-mm-dd hh-mm with padding", () => {
+  const now = new Date(2026, 7, 8, 9, 5); // Aug 8 2026, 09:05 local
+  expect(timestampName("wobblewerk", "json", now)).toBe("wobblewerk 2026-08-08 09-05.json");
 });

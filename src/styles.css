@@ -159,19 +159,6 @@ button {
   display: grid;
   place-items: center;
   text-align: center;
-  background: #4a4a48;
-  border-color: #4a4a48;
-  color: #fff;
-}
-
-#tools #tool-icons button:hover {
-  background: #5c5c5a;
-  border-color: #5c5c5a;
-}
-
-#tools #tool-icons button[data-active="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
 }
 
 #param-panel {
@@ -307,9 +294,10 @@ svg#sheet.tool-select g.strokes {
   cursor: pointer;
 }
 
-/* ---- new-sheet dialog ---- */
+/* ---- dialogs (new-sheet, png-export) ---- */
 
-#new-dialog {
+#new-dialog,
+#png-dialog {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 20px 24px;
@@ -317,21 +305,25 @@ svg#sheet.tool-select g.strokes {
   color: var(--text);
 }
 
-#new-dialog::backdrop {
+#new-dialog::backdrop,
+#png-dialog::backdrop {
   background: rgba(0, 0, 0, 0.35);
 }
 
-#new-dialog h2 {
+#new-dialog h2,
+#png-dialog h2 {
   margin: 0 0 14px;
   font-size: 16px;
 }
 
-#new-dialog-options {
+#new-dialog-options,
+#png-dialog-options {
   display: flex;
   gap: 10px;
 }
 
-#new-dialog-options button {
+#new-dialog-options button,
+#png-dialog-options button {
   flex: 1;
   background: #fff;
   border: 1px solid var(--border);
@@ -339,9 +331,11 @@ svg#sheet.tool-select g.strokes {
   padding: 14px 10px;
   cursor: pointer;
   text-align: center;
+  white-space: nowrap;
 }
 
-#new-dialog-options button:hover {
+#new-dialog-options button:hover,
+#png-dialog-options button:hover {
   background: var(--bg);
 }
 

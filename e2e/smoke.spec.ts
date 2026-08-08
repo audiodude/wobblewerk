@@ -106,8 +106,16 @@ test("draw, undo, redo, autosave, export", async ({ page }) => {
   await page.keyboard.press("Delete");
   await expect(strokes).toHaveCount(2);
 
-  // png export produces a download
-  const dl = page.waitForEvent("download");
+  // png export: dialog asks about clipping, then produces a timestamped download
   await page.click("#btn-export-png");
-  expect((await dl).suggestedFilename()).toBe("wobblewerk.png");
+  await expect(page.locator("#png-dialog")).toBeVisible();
+  const dl = page.waitForEvent("download");
+  await page.click("#png-clip-no");
+  expect((await dl).suggestedFilename()).toMatch(/^wobblewerk \d{4}-\d\d-\d\d \d\d-\d\d\.png$/);
+
+  // trimmed export also downloads (dialog "yes" path)
+  await page.click("#btn-export-png");
+  const dl2 = page.waitForEvent("download");
+  await page.click("#png-clip-yes");
+  expect((await dl2).suggestedFilename()).toMatch(/\.png$/);
 });

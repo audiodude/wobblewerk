@@ -17,7 +17,7 @@ import { SheetRenderer } from "./render/svg";
 import { ViewBox } from "./render/viewport";
 import { getPalette, PALETTES } from "./model/palettes";
 import { exportSvgString } from "./export/svg";
-import { download, exportPngBlob } from "./export/png";
+import { artworkClip, download, exportPngBlob, timestampName } from "./export/png";
 import { BRUSHES } from "./brushes/index";
 import { defaultParams } from "./model/types";
 import type { Scene } from "./model/types";
@@ -321,7 +321,7 @@ newDialog.querySelectorAll<HTMLButtonElement>("button[data-sheet]").forEach((btn
 // ---- save / open / export ----
 
 btnSave.addEventListener("click", () => {
-  download("wobblewerk.json", new Blob([serializeScene(scene)], { type: "application/json" }));
+  download(timestampName("wobblewerk", "json"), new Blob([serializeScene(scene)], { type: "application/json" }));
 });
 
 btnOpen.addEventListener("click", () => fileOpenInput.click());
@@ -381,14 +381,21 @@ fileOpenInput.addEventListener("change", () => {
 });
 
 btnExportSvg.addEventListener("click", () => {
-  download("wobblewerk.svg", new Blob([exportSvgString(svgEl, scene)], { type: "image/svg+xml" }));
+  download(timestampName("wobblewerk", "svg"), new Blob([exportSvgString(svgEl, scene)], { type: "image/svg+xml" }));
 });
 
-btnExportPng.addEventListener("click", () => {
-  exportPngBlob(svgEl, scene)
-    .then((blob) => download("wobblewerk.png", blob))
+const pngDialog = document.getElementById("png-dialog") as HTMLDialogElement;
+
+function doPngExport(clip?: ReturnType<typeof artworkClip>): void {
+  pngDialog.close();
+  exportPngBlob(svgEl, scene, clip ?? undefined)
+    .then((blob) => download(timestampName("wobblewerk", "png"), blob))
     .catch(() => alert("PNG export failed"));
-});
+}
+
+btnExportPng.addEventListener("click", () => pngDialog.showModal());
+document.getElementById("png-clip-yes")!.addEventListener("click", () => doPngExport(artworkClip(scene)));
+document.getElementById("png-clip-no")!.addEventListener("click", () => doPngExport());
 
 // ---- zoom & pan on #stage ----
 
