@@ -1,8 +1,9 @@
 import type { BrushDef } from "../model/types";
 import { zigzag } from "./zigzag";
 import { hexpack } from "./hexpack";
+import { sunstamp } from "./sunstamp";
 
-export const BRUSHES: Record<string, BrushDef> = { zigzag, hexpack };
+export const BRUSHES: Record<string, BrushDef> = { zigzag, hexpack, sunstamp };
 
 export function getBrush(id: string): BrushDef {
   const b = BRUSHES[id];
