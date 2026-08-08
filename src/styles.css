@@ -49,11 +49,24 @@ button {
   border-bottom: 1px solid var(--border);
 }
 
-#palette-strip,
+#topbar-nav,
 #topbar-actions {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* palette strip lives in the rail, above the tool icons */
+#palette-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+#palette-select {
+  flex: 1 1 100%;
 }
 
 #topbar button,

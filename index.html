@@ -9,13 +9,12 @@
   <body>
     <div id="app">
       <header id="topbar">
-        <div id="palette-strip">
-          <select id="palette-select"></select>
-        </div>
-        <div id="topbar-actions">
+        <div id="topbar-nav">
           <button id="btn-undo" type="button" title="Undo (Ctrl+Z)">Undo</button>
           <button id="btn-redo" type="button" title="Redo (Ctrl+Shift+Z)">Redo</button>
           <button id="btn-fit" type="button" title="Reset Zoom (Ctrl+0)">Reset Zoom</button>
+        </div>
+        <div id="topbar-actions">
           <button id="btn-new" type="button" title="New">New</button>
           <button id="btn-open" type="button" title="Open">Open</button>
           <button id="btn-save" type="button" title="Save">Save</button>
@@ -27,6 +26,9 @@
 
       <div id="body">
         <aside id="rail">
+          <div id="palette-strip">
+            <select id="palette-select"></select>
+          </div>
           <div id="tools">
             <div id="tool-icons">
               <button type="button" data-tool="select" title="Select (V)">
