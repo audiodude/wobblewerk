@@ -77,6 +77,7 @@ function doUndo(): void {
   seedIdCounter(scene);
   renderer.renderScene(scene);
   applyViewBox();
+  syncPaletteSelect();
   autosave(scene);
   refreshChrome();
 }
@@ -88,6 +89,7 @@ function doRedo(): void {
   seedIdCounter(scene);
   renderer.renderScene(scene);
   applyViewBox();
+  syncPaletteSelect();
   autosave(scene);
   refreshChrome();
 }
@@ -145,6 +147,7 @@ newDialog.querySelectorAll<HTMLButtonElement>("button[data-sheet]").forEach((btn
   btn.addEventListener("click", () => {
     const preset = SHEET_PRESETS[btn.dataset.sheet!]!;
     scene = newScene(preset.w, preset.h);
+    seedIdCounter(scene);
     vb = new ViewBox(scene.sheet.w, scene.sheet.h);
     history.reset(scene);
     autosave(scene);
