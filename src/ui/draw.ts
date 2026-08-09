@@ -17,6 +17,9 @@ export interface DrawDeps {
   getParams(brushId: string): Record<string, number>;
   isPanning(): boolean;
   commit(): void;
+  /** Called with the new stroke's id right after it lands in the scene — lets the
+   * app auto-select it (param panel binds to it) without switching tools. */
+  onStrokeCommitted(id: string): void;
 }
 
 type DragTool = "zigzag" | "hexpack";
@@ -32,7 +35,7 @@ function isBrushTool(tool: Tool): tool is DragTool | "sunstamp" {
  * Self-contained state machine — no module-level globals outside this closure.
  */
 export function installDrawing(deps: DrawDeps): void {
-  const { svg, getScene, state, renderer, clientToSheet, getParams, isPanning, commit } = deps;
+  const { svg, getScene, state, renderer, clientToSheet, getParams, isPanning, commit, onStrokeCommitted } = deps;
 
   // ---- drag state, used by the zigzag/hexpack pointerdown->move->up cycle ----
   let dragging = false;
@@ -129,6 +132,7 @@ export function installDrawing(deps: DrawDeps): void {
     const stroke = addStroke(scene, { brush: tool, input, seed: dragSeed, params, colorSlot: dragColorSlot });
     renderer.updateStroke(scene, stroke.id);
     commit();
+    onStrokeCommitted(stroke.id);
   }
 
   function onPointerDown(e: PointerEvent): void {
@@ -152,6 +156,7 @@ export function installDrawing(deps: DrawDeps): void {
       renderer.clearLive();
       renderer.updateStroke(scene, stroke.id);
       commit();
+      onStrokeCommitted(stroke.id);
       previewSeed = randomSeed(); // fresh seed for the next hover preview
       return;
     }

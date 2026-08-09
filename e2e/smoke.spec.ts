@@ -1,61 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-
-const URL = "http://localhost:5199";
-
-async function newPortraitSheet(page: Page): Promise<void> {
-  await page.goto(URL);
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
-  await page.click('[data-sheet="portrait"]');
-}
-
-async function drag(page: Page, from: [number, number], to: [number, number]): Promise<void> {
-  await page.mouse.move(...from);
-  await page.mouse.down();
-  const steps = 25;
-  for (let i = 1; i <= steps; i++) {
-    await page.mouse.move(from[0] + ((to[0] - from[0]) * i) / steps, from[1] + ((to[1] - from[1]) * i) / steps);
-  }
-  await page.mouse.up();
-}
-
-// hexpack's region input is closed by the brush itself (first point
-// re-appended) — a straight there-and-back drag would enclose ~zero area
-// and only ever emit the trivial boundary contour (or nothing, if RDP
-// simplification collapses it below 3 points). Sweep a real arc instead so
-// the closed region has non-trivial area and reliably packs geometry.
-async function dragArc(page: Page, center: [number, number], radius: number, startDeg: number, endDeg: number): Promise<void> {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const pt = (deg: number): [number, number] => [center[0] + radius * Math.cos(toRad(deg)), center[1] + radius * Math.sin(toRad(deg))];
-  const [sx, sy] = pt(startDeg);
-  await page.mouse.move(sx, sy);
-  await page.mouse.down();
-  const steps = 30;
-  for (let i = 1; i <= steps; i++) {
-    const [x, y] = pt(startDeg + ((endDeg - startDeg) * i) / steps);
-    await page.mouse.move(x, y);
-  }
-  await page.mouse.up();
-}
-
-// Selecting a stroke has to click ON its rendered outline: stroke hit-testing
-// has no fill (pointer-events: stroke), so the *center* point used to place a
-// sunstamp sits inside the ring, not on it, and won't register a hit. Read
-// the stroke's actual baked `d` back off the DOM (post hand-wobble) and
-// convert its leading point from sheet space to screen space via the live
-// viewBox, so the click lands on real, currently-rendered geometry.
-async function strokeFirstPointOnScreen(page: Page, strokeId: string): Promise<[number, number]> {
-  const svg = page.locator("#stage svg");
-  const d = await page.locator(`g[data-stroke-id="${strokeId}"] path.ink`).getAttribute("d");
-  const m = d?.match(/M\s*(-?[\d.]+)[ ,]+(-?[\d.]+)/);
-  if (!m) throw new Error(`could not parse leading M point from d="${d}"`);
-  const sheetX = parseFloat(m[1]!);
-  const sheetY = parseFloat(m[2]!);
-  const viewBox = (await svg.getAttribute("viewBox"))!;
-  const [vx, vy, vw, vh] = viewBox.split(/\s+/).map(Number) as [number, number, number, number];
-  const rect = (await svg.boundingBox())!;
-  return [rect.x + ((sheetX - vx) / vw) * rect.width, rect.y + ((sheetY - vy) / vh) * rect.height];
-}
+import { expect, test } from "@playwright/test";
+import { drag, dragArc, newPortraitSheet, strokeFirstPointOnScreen } from "./helpers";
 
 test("draw, undo, redo, autosave, export", async ({ page }) => {
   await newPortraitSheet(page);
@@ -118,4 +62,47 @@ test("draw, undo, redo, autosave, export", async ({ page }) => {
   const dl2 = page.waitForEvent("download");
   await page.click("#png-clip-yes");
   expect((await dl2).suggestedFilename()).toMatch(/\.png$/);
+});
+
+test("finishing a stroke auto-selects it; param tweaks update the stroke AND the brush defaults", async ({ page }) => {
+  await newPortraitSheet(page);
+  const stage = page.locator("#stage svg");
+  const box = (await stage.boundingBox())!;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+
+  // draw a zigzag — it should come out selected (halo + selection panel with
+  // a re-roll button) while the zigzag tool stays active
+  await drag(page, [cx - 150, cy], [cx + 150, cy - 80]);
+  await expect(page.locator("g.overlay path.halo")).toHaveCount(1);
+  await expect(page.locator('#tools button[data-tool="zigzag"]')).toHaveAttribute("data-active", "true");
+  await expect(page.locator("#param-panel .panel-actions")).toHaveCount(1); // selection panel, not tool defaults
+
+  // dial the first param on the just-drawn stroke; because the matching brush
+  // tool is still active this must also become the default for the next stroke
+  const firstStrokeId = await page.evaluate(() => (window as any).__ww.getScene().strokes[0].id);
+  const slider = page.locator('#param-panel input[type="range"]').first();
+  await slider.evaluate((el: HTMLInputElement) => {
+    el.value = el.max;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  const editedValue = await page.evaluate(
+    (id) => (window as any).__ww.getScene().strokes.find((s: any) => s.id === id).params.runLength,
+    firstStrokeId,
+  );
+  expect(editedValue).toBe(80); // slider max carried into the stroke
+
+  // next zigzag inherits the tweaked default and steals the selection
+  await drag(page, [cx - 150, cy + 150], [cx + 150, cy + 220]);
+  const strokes = page.locator("g.strokes > g");
+  await expect(strokes).toHaveCount(2);
+  const secondParams = await page.evaluate(() => (window as any).__ww.getScene().strokes[1].params);
+  expect(secondParams.runLength).toBe(80);
+  await expect(page.locator("g.overlay path.halo")).toHaveCount(1); // selection moved, still exactly one halo
+
+  // Esc returns to the tool-defaults panel without switching tools
+  await page.keyboard.press("Escape");
+  await expect(page.locator("g.overlay path.halo")).toHaveCount(0);
+  await expect(page.locator('#tools button[data-tool="zigzag"]')).toHaveAttribute("data-active", "true");
 });

@@ -482,6 +482,10 @@ installDrawing({
   // by keydown, strictly earlier than any click in the same pan gesture.
   isPanning: () => spaceDown,
   commit,
+  // Auto-select the stroke you just finished — the panel binds to it immediately
+  // (tweak params right away) while the drawing tool stays active. Esc to get
+  // back to the tool-defaults panel.
+  onStrokeCommitted: select,
 });
 
 // ---- selection: click-to-select + keyboard ----

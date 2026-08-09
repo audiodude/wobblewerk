@@ -150,6 +150,12 @@ function renderSelectionPanel(
         (v) => {
           if (vintage) return; // defense-in-depth: the input is disabled, but don't rely on that alone
           reparamStroke(deps.getScene(), stroke.id, { ...stroke.params, [def.key]: v });
+          // While the matching brush tool is still active (the just-drew-it flow),
+          // dialing a stroke also becomes the new default for the next stroke.
+          // Edits made from the select tool leave defaults alone.
+          if (deps.state.tool === stroke.brush && brushParams[stroke.brush]) {
+            brushParams[stroke.brush]![def.key] = v;
+          }
           deps.liveUpdate();
           pendingEdit = true;
         },
