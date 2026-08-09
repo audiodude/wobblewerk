@@ -23,18 +23,13 @@ import { BRUSHES } from "./brushes/index";
 import { defaultParams } from "./model/types";
 import type { Scene } from "./model/types";
 import type { XY } from "./model/geometry";
+import { sheetDims, type SheetOrientation, type SheetSize } from "./model/sheets";
 
 declare global {
   interface Window {
     __ww: { getScene: () => Scene; exportSvgString: () => string };
   }
 }
-
-const SHEET_PRESETS: Record<string, { w: number; h: number }> = {
-  square: { w: 1600, h: 1600 },
-  portrait: { w: 1600, h: 2000 },
-  landscape: { w: 2000, h: 1600 },
-};
 
 // ---- DOM refs ----
 
@@ -63,7 +58,7 @@ const panelEl = document.getElementById("param-panel") as HTMLElement;
 // ---- boot ----
 
 const loaded = loadAutosave();
-let scene: Scene = loaded ?? newScene(SHEET_PRESETS.square!.w, SHEET_PRESETS.square!.h);
+let scene: Scene = loaded ?? newScene(sheetDims("s", "square").w, sheetDims("s", "square").h);
 seedIdCounter(scene);
 
 const renderer = new SheetRenderer(svgEl);
@@ -313,9 +308,31 @@ refreshChrome(); // initial paint: swatch strip, hand dial position, banner hidd
 
 btnNew.addEventListener("click", () => newDialog.showModal());
 
-newDialog.querySelectorAll<HTMLButtonElement>("button[data-sheet]").forEach((btn) => {
+let newSheetSize: SheetSize = "s";
+const sizeButtons = newDialog.querySelectorAll<HTMLButtonElement>("button[data-size]");
+const orientationButtons = newDialog.querySelectorAll<HTMLButtonElement>("button[data-sheet]");
+
+function updateNewDialogLabels(): void {
+  sizeButtons.forEach((b) => {
+    b.dataset.active = String(b.dataset.size === newSheetSize);
+  });
+  orientationButtons.forEach((b) => {
+    const { w, h } = sheetDims(newSheetSize, b.dataset.sheet as SheetOrientation);
+    b.querySelector("small")!.textContent = `${w} × ${h}`;
+  });
+}
+
+sizeButtons.forEach((b) =>
+  b.addEventListener("click", () => {
+    newSheetSize = b.dataset.size as SheetSize;
+    updateNewDialogLabels();
+  }),
+);
+updateNewDialogLabels();
+
+orientationButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
-    const preset = SHEET_PRESETS[btn.dataset.sheet!]!;
+    const preset = sheetDims(newSheetSize, btn.dataset.sheet as SheetOrientation);
     scene = newScene(preset.w, preset.h);
     seedIdCounter(scene);
     vb = new ViewBox(scene.sheet.w, scene.sheet.h);

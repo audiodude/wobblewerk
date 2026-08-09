@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { drag, getScene, newPortraitSheet, stageCenter } from "./helpers";
+import { drag, getScene, newPortraitSheet, stageCenter, URL } from "./helpers";
 
 // Focused coverage for the chrome/wiring layer (main.ts, ui/chrome.ts,
 // ui/panel.ts) — the flows the smoke test doesn't touch: palette
@@ -195,4 +195,28 @@ test("grain dial: live render, export coverage, exactly one history entry", asyn
   await expect(page.locator("svg#sheet rect.paper")).toHaveAttribute("fill", "#1b1b1e");
   expect(await page.locator("svg#sheet feColorMatrix").getAttribute("values")).toContain("0 0 0 0 1 ");
   await expect(page.locator("g.overlay path.halo")).toHaveCount(1);
+});
+
+test("size picker: S is default, dims land in the scene, S renders half of L on screen", async ({ page }) => {
+  await page.goto(URL);
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+
+  // S is the default size; labels show S dims
+  await expect(page.locator('#new-dialog button[data-size="s"]')).toHaveAttribute("data-active", "true");
+  await expect(page.locator('#new-dialog button[data-sheet="square"] small')).toHaveText("800 × 800");
+
+  await page.click('[data-sheet="square"]');
+  expect((await getScene(page)).sheet).toEqual({ w: 800, h: 800 });
+  const sBox = (await page.locator("svg#sheet rect.paper").boundingBox())!;
+
+  // New -> L square: on-screen paper should be ~2x wider (constant scale)
+  await page.click("#btn-new");
+  await page.click('#new-dialog button[data-size="l"]');
+  await expect(page.locator('#new-dialog button[data-sheet="square"] small')).toHaveText("1600 × 1600");
+  await page.click('[data-sheet="square"]');
+  expect((await getScene(page)).sheet).toEqual({ w: 1600, h: 1600 });
+  const lBox = (await page.locator("svg#sheet rect.paper").boundingBox())!;
+  expect(lBox.width / sBox.width).toBeGreaterThan(1.9);
+  expect(lBox.width / sBox.width).toBeLessThan(2.1);
 });

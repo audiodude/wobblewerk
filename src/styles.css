@@ -368,6 +368,32 @@ svg#sheet.tool-select g.strokes {
   font-size: 16px;
 }
 
+#new-dialog-sizes {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#new-dialog-sizes button {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#new-dialog-sizes button:hover {
+  background: var(--bg);
+}
+
+#new-dialog-sizes button[data-active="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 #new-dialog-options,
 #png-dialog-options {
   display: flex;

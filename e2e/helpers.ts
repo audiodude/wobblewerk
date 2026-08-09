@@ -6,6 +6,7 @@ export async function newPortraitSheet(page: Page): Promise<void> {
   await page.goto(URL);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
+  await page.click('#new-dialog button[data-size="l"]');
   await page.click('[data-sheet="portrait"]');
 }
 
