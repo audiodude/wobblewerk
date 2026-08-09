@@ -33,19 +33,20 @@ function sanitizeParams(brush: BrushDef, params: Record<string, number>): Record
 
 export function runPipeline(
   brush: BrushDef, input: BrushInput, params: Record<string, number>,
-  seed: number, hand: number, sheetW: number,
+  seed: number, hand: number,
 ): BakedPath[] {
   const { gen, hand: handRng } = strokeStreams(seed);
   // Sanitize a copy for generation only — the stroke's stored params (what
   // reparamStroke persists and the UI re-reads) are left untouched.
   const safeParams = sanitizeParams(brush, params);
   const ideal = brush.generate(input, safeParams, gen);
-  const wobbled = handPass(ideal, hand * brush.handDamping, handRng, sheetW);
-  const width = (brush.strokeWidth * sheetW) / 1600;
+  const wobbled = handPass(ideal, hand * brush.handDamping, handRng);
+  // Marks are fixed-size in sheet units (WYSIWYG covenant) — width included.
+  const width = brush.strokeWidth;
   return wobbled.map((p) => ({ d: pathToD(p.points, p.closed), stroke: p.stroke, fill: p.fill, width: p.stroke ? width : 0 }));
 }
 
 export function bakeStroke(scene: Scene, stroke: Stroke): void {
   const brush = getBrush(stroke.brush);
-  stroke.baked = runPipeline(brush, stroke.input, stroke.params, stroke.seed, scene.hand, scene.sheet.w);
+  stroke.baked = runPipeline(brush, stroke.input, stroke.params, stroke.seed, scene.hand);
 }

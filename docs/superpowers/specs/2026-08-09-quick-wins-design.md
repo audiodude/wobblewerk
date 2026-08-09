@@ -102,7 +102,9 @@ Marks are fixed-size in sheet units, so a smaller sheet must *look* smaller, not
 would read mechanically *cleaner*, the opposite of the intended chunky feel.
 
 **Change:** remove the `sheetW` parameter from `handPass` entirely (constant `scale = 1`
-behavior); update `runPipeline` and tests accordingly.
+behavior); update `runPipeline` and tests accordingly. Stroke width had the same
+`sheetW / 1600` factor in `runPipeline` — it is removed in the same change (baked width
+= `brush.strokeWidth`, constant).
 
 **Preservation impact:** zero for any 1600-wide sheet (scale was already 1). Existing
 2000-wide landscape drawings re-bake with ~20% less wobble **only when a stroke is next

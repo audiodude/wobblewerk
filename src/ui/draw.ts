@@ -52,7 +52,7 @@ export function installDrawing(deps: DrawDeps): void {
 
   function bakedFor(brushId: string, input: BrushInput, seed: number, params: Record<string, number>): BakedPath[] {
     const scene = getScene();
-    return runPipeline(getBrush(brushId), input, params, seed, scene.hand, scene.sheet.w);
+    return runPipeline(getBrush(brushId), input, params, seed, scene.hand);
   }
 
   function transientStroke(

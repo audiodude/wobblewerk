@@ -21,10 +21,9 @@ function normalAt(pts: XY[], i: number): XY {
   return { x: -dy / len, y: dx / len };
 }
 
-export function handPass(paths: IdealPath[], amount: number, rng: Rng, sheetW = 1600): IdealPath[] {
+export function handPass(paths: IdealPath[], amount: number, rng: Rng): IdealPath[] {
   if (amount <= 0) return paths;
-  const scale = sheetW / 1600;
-  const step = 8 * scale;
+  const step = 8;
   return paths.map((path) => {
     const phase = rng() * 1000;
     const drift = rng() * 1000;
@@ -43,11 +42,11 @@ export function handPass(paths: IdealPath[], amount: number, rng: Rng, sheetW = 
       const n = valueNoise1D(phase + (i * step) / 40);
       const m = valueNoise1D(drift + (i * step) / 90);
       const nor = normalAt(pts, i);
-      const disp = (n * 4 + m * 2.5) * amount * scale;
+      const disp = (n * 4 + m * 2.5) * amount;
       return { x: pt.x + nor.x * disp, y: pt.y + nor.y * disp };
     });
     if (path.closed && amount > 0.5) {
-      const gapPts = Math.ceil(((amount - 0.5) * 12 * scale) / step);
+      const gapPts = Math.ceil(((amount - 0.5) * 12) / step);
       // Shrink-only: never grow the array (that manufactures an empty slot
       // that later throws in pathToD). If trimming would go below 2 points,
       // skip the trim rather than clamping up.
