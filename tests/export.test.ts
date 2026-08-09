@@ -73,6 +73,15 @@ test("timestampName formats yyyy-mm-dd hh-mm with padding", () => {
   expect(timestampName("wobblewerk", "json", now)).toBe("wobblewerk 2026-08-08 09-05.json");
 });
 
+test("exported SVG carries the sheet clipPath (harmless and correct in Inkscape)", () => {
+  document.body.innerHTML = "<svg></svg>";
+  const svg = document.querySelector("svg")!;
+  const scene = newScene(400, 400);
+  new SheetRenderer(svg).renderScene(scene);
+  const out = exportSvgString(svg, scene);
+  expect(out).toContain('clipPath id="ww-sheet-clip"');
+});
+
 test("exported SVG carries the grain layer (WYSIWYG covenant)", () => {
   document.body.innerHTML = "<svg></svg>";
   const svg = document.querySelector("svg")!;

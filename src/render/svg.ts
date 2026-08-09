@@ -8,6 +8,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 const GRAIN_FILTER_ID = "ww-grain";
 const GRAIN_MAX_OPACITY = 0.35;
+const SHEET_CLIP_ID = "ww-sheet-clip";
 
 // Palettes always use #rrggbb. Rec. 709 luma; < 128 counts as dark paper.
 function paperIsDark(hex: string): boolean {
@@ -112,9 +113,30 @@ export class SheetRenderer {
     return g;
   }
 
+  // Off-sheet ink is visible on screen (the stage matte extends past the
+  // sheet) but exports crop at the viewBox — clip ink-bearing layers to the
+  // sheet so screen and export always agree (WYSIWYG covenant). Lives outside
+  // g.grain-layer, which updateGrain() wholesale-replaces, so the clipPath
+  // must not be nested inside it.
+  private buildSheetClip(scene: Scene): SVGDefsElement {
+    const defs = el("defs");
+    const clip = el("clipPath");
+    clip.setAttribute("id", SHEET_CLIP_ID);
+    const rect = el("rect");
+    rect.setAttribute("x", "0");
+    rect.setAttribute("y", "0");
+    rect.setAttribute("width", String(scene.sheet.w));
+    rect.setAttribute("height", String(scene.sheet.h));
+    clip.appendChild(rect);
+    defs.appendChild(clip);
+    return defs;
+  }
+
   renderScene(scene: Scene): void {
     this.svg.setAttribute("viewBox", `0 0 ${scene.sheet.w} ${scene.sheet.h}`);
     this.svg.replaceChildren();
+
+    this.svg.appendChild(this.buildSheetClip(scene));
 
     const palette = getPalette(scene.paletteId);
     const paper = el("rect");
@@ -128,17 +150,22 @@ export class SheetRenderer {
 
     this.svg.appendChild(this.buildGrainLayer(scene, palette));
 
+    const clipUrl = `url(#${SHEET_CLIP_ID})`;
+
     const strokesG = el("g");
     strokesG.setAttribute("class", "strokes");
+    strokesG.setAttribute("clip-path", clipUrl);
     for (const stroke of scene.strokes) strokesG.appendChild(this.buildStrokeGroup(scene, stroke));
     this.svg.appendChild(strokesG);
 
     const liveG = el("g");
     liveG.setAttribute("class", "live");
+    liveG.setAttribute("clip-path", clipUrl);
     this.svg.appendChild(liveG);
 
     const overlayG = el("g");
     overlayG.setAttribute("class", "overlay");
+    overlayG.setAttribute("clip-path", clipUrl);
     this.svg.appendChild(overlayG);
   }
 

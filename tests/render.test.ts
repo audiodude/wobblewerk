@@ -62,6 +62,21 @@ describe("SheetRenderer", () => {
     r.setSelection(scene, null);
     expect(svg.querySelector("g.overlay path.halo")).toBeNull();
   });
+
+  // WYSIWYG covenant: off-sheet ink is visible on the stage matte but absent
+  // from exports (viewBox crops it). Clipping strokes/live/overlay to the
+  // sheet keeps screen and export in agreement.
+  test("ink layers are clipped to the sheet; clipPath survives updateGrain", () => {
+    r.renderScene(scene);
+    const clipRect = svg.querySelector<SVGRectElement>("clipPath#ww-sheet-clip rect")!;
+    expect(clipRect.getAttribute("width")).toBe(String(scene.sheet.w));
+    expect(clipRect.getAttribute("height")).toBe(String(scene.sheet.h));
+    for (const cls of ["strokes", "live", "overlay"]) {
+      expect(svg.querySelector(`g.${cls}`)!.getAttribute("clip-path")).toBe("url(#ww-sheet-clip)");
+    }
+    r.updateGrain(scene); // replaces g.grain-layer wholesale — must not take the clipPath with it
+    expect(svg.querySelector("clipPath#ww-sheet-clip")).toBeTruthy();
+  });
 });
 
 describe("grain layer", () => {
@@ -75,7 +90,7 @@ describe("grain layer", () => {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
     new SheetRenderer(svg).renderScene(grainScene(0.5));
     const kids = Array.from(svg.children).map((c) => c.getAttribute("class"));
-    expect(kids).toEqual(["paper", "grain-layer", "strokes", "live", "overlay"]);
+    expect(kids).toEqual([null, "paper", "grain-layer", "strokes", "live", "overlay"]); // null: top-level <defs> (sheet clipPath)
     const rect = svg.querySelector("g.grain-layer rect.grain")!;
     expect(rect.getAttribute("opacity")).toBe("0.18"); // 0.5 * 0.35 rounded to 2dp
     expect(rect.getAttribute("filter")).toBe("url(#ww-grain)");

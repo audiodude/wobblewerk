@@ -237,3 +237,30 @@ test("size picker: S is default, dims land in the scene, S renders half of L on 
   expect(lBox.width / sBox.width).toBeGreaterThan(1.9);
   expect(lBox.width / sBox.width).toBeLessThan(2.1);
 });
+
+test("WYSIWYG: clicks on the stage matte are ignored, not committed as invisible strokes", async ({ page }) => {
+  await page.goto(URL);
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.click('[data-sheet="square"]'); // S is default -> 800x800, matte fills most of the stage
+
+  const strokes = page.locator("g.strokes > g");
+  const stageBox = (await page.locator("#stage svg").boundingBox())!;
+  const matteX = stageBox.x + 30; // well outside the S sheet's centered ~45%-width paper
+  const matteY = stageBox.y + stageBox.height / 2;
+
+  // default zigzag tool: a click (degenerate drag) on the matte commits nothing
+  await page.mouse.click(matteX, matteY);
+  await expect(strokes).toHaveCount(0);
+
+  // sunstamp: a matte click would otherwise commit an invisible off-sheet stamp
+  await page.keyboard.press("3");
+  await page.mouse.click(matteX, matteY);
+  await expect(strokes).toHaveCount(0);
+
+  // sanity: drawing on the actual sheet still works
+  await page.keyboard.press("1");
+  const [cx, cy] = await stageCenter(page);
+  await drag(page, [cx - 100, cy], [cx + 100, cy - 50]);
+  await expect(strokes).toHaveCount(1);
+});

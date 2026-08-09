@@ -141,10 +141,17 @@ export function installDrawing(deps: DrawDeps): void {
     const tool = state.tool;
     if (!isBrushTool(tool)) return; // "select" tool: not ours to handle
 
-    e.preventDefault();
-    svg.setPointerCapture(e.pointerId);
     const pt = clientToSheet(e);
     const scene = getScene();
+    // WYSIWYG: ink drawn off-sheet is clipped out of exports, so a stroke
+    // that *starts* on the matte would be invisible on screen too (or, for
+    // sunstamp, commit an invisible stroke outright). Ignore it — a drag
+    // that starts on the sheet and wanders off stays allowed; only its
+    // off-sheet portion clips.
+    if (pt.x < 0 || pt.y < 0 || pt.x > scene.sheet.w || pt.y > scene.sheet.h) return;
+
+    e.preventDefault();
+    svg.setPointerCapture(e.pointerId);
     const inkCount = getPalette(scene.paletteId).inks.length;
 
     if (tool === "sunstamp") {
