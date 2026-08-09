@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { AUTOSAVE_KEY, autosave, deserializeScene, flushAutosave, loadAutosave, serializeScene } from "../src/engine/persist";
 import { addStroke, newScene } from "../src/engine/scene";
 import { defaultParams } from "../src/model/types";
@@ -203,4 +203,27 @@ test("autosave and loadAutosave without storage argument in headless environment
   expect(() => autosave(scene)).not.toThrow();
   expect(() => loadAutosave()).not.toThrow();
   expect(loadAutosave()).toBeNull();
+});
+
+describe("grain persistence", () => {
+  test("grain round-trips through serialize/deserialize", () => {
+    const scene = newScene(1600, 2000);
+    scene.grain = 0.7;
+    expect(deserializeScene(serializeScene(scene)).grain).toBe(0.7);
+  });
+  test("legacy JSON without grain deserializes to grain 0", () => {
+    const legacy = JSON.parse(serializeScene(newScene(1600, 2000)));
+    delete legacy.grain;
+    expect(deserializeScene(JSON.stringify(legacy)).grain).toBe(0);
+  });
+  test("non-numeric grain is rejected", () => {
+    const bad = JSON.parse(serializeScene(newScene(1600, 2000)));
+    bad.grain = "gritty";
+    expect(() => deserializeScene(JSON.stringify(bad))).toThrow();
+  });
+  test("out-of-range grain is clamped on load", () => {
+    const wild = JSON.parse(serializeScene(newScene(1600, 2000)));
+    wild.grain = 9;
+    expect(deserializeScene(JSON.stringify(wild)).grain).toBe(1);
+  });
 });

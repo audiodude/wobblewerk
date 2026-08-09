@@ -41,14 +41,14 @@ const mkStroke = (d: string, width: number): Stroke => ({
 });
 
 test("artworkClip: ink bbox + half-width + margin, sheet-relative", () => {
-  const scene: Scene = { version: 1, sheet: { w: 1600, h: 2000 }, paletteId: "notebook", hand: 0, strokes: [] };
+  const scene: Scene = { version: 1, sheet: { w: 1600, h: 2000 }, paletteId: "notebook", hand: 0, grain: 0, strokes: [] };
   scene.strokes.push(mkStroke("M 100 200 L 300 400", 4));
   // pad 2 (width/2) + margin 20 (sheetW 1600 → scale 1)
   expect(artworkClip(scene)).toEqual({ x: 78, y: 178, w: 244, h: 244 });
 });
 
 test("artworkClip: clamps to sheet and handles empty scene", () => {
-  const scene: Scene = { version: 1, sheet: { w: 1600, h: 2000 }, paletteId: "notebook", hand: 0, strokes: [] };
+  const scene: Scene = { version: 1, sheet: { w: 1600, h: 2000 }, paletteId: "notebook", hand: 0, grain: 0, strokes: [] };
   expect(artworkClip(scene)).toBeNull();
   scene.strokes.push(mkStroke("M 5 5 L 1595 1995", 4));
   const clip = artworkClip(scene)!;
@@ -59,7 +59,7 @@ test("artworkClip: clamps to sheet and handles empty scene", () => {
 });
 
 test("artworkClip: negative coords clamp to 0 and margin scales with sheet", () => {
-  const scene: Scene = { version: 1, sheet: { w: 3200, h: 3200 }, paletteId: "notebook", hand: 0, strokes: [] };
+  const scene: Scene = { version: 1, sheet: { w: 3200, h: 3200 }, paletteId: "notebook", hand: 0, grain: 0, strokes: [] };
   scene.strokes.push(mkStroke("M -50 100 L 200 300", 0));
   const clip = artworkClip(scene)!; // margin 40 at sheetW 3200
   expect(clip.x).toBe(0);

@@ -56,7 +56,7 @@ function isValidStroke(stroke: unknown): boolean {
   );
 }
 
-function isValidScene(value: unknown): value is Scene {
+function isValidScene(value: unknown): value is Scene & { grain?: number } {
   if (typeof value !== "object" || value === null) return false;
   const s = value as Record<string, unknown>;
   if (s.version !== 1) return false;
@@ -66,6 +66,7 @@ function isValidScene(value: unknown): value is Scene {
   if (!isFiniteNumber(sheet.h) || sheet.h <= 0) return false;
   if (typeof s.paletteId !== "string") return false;
   if (!isFiniteNumber(s.hand)) return false;
+  if (s.grain !== undefined && !isFiniteNumber(s.grain)) return false;
   if (!Array.isArray(s.strokes)) return false;
   return s.strokes.every(isValidStroke);
 }
@@ -74,7 +75,10 @@ export function deserializeScene(json: string): Scene {
   let parsed: unknown;
   try { parsed = JSON.parse(json); } catch { throw new Error("unsupported file"); }
   if (!isValidScene(parsed)) throw new Error("unsupported file");
-  return parsed;
+  // Legacy files predate grain; clamp any stored value to the dial's range.
+  const scene = parsed as unknown as Record<string, unknown>;
+  scene.grain = Math.min(1, Math.max(0, (scene.grain ?? 0) as number));
+  return scene as unknown as Scene;
 }
 
 let timer: ReturnType<typeof setTimeout> | undefined;

@@ -10,7 +10,7 @@ export function seedIdCounter(scene: Scene): void {
 }
 
 export function newScene(w: number, h: number, paletteId = "notebook"): Scene {
-  return { version: 1, sheet: { w, h }, paletteId, hand: 0.6, strokes: [] };
+  return { version: 1, sheet: { w, h }, paletteId, hand: 0.6, grain: 0, strokes: [] };
 }
 
 export function addStroke(
@@ -87,6 +87,12 @@ export function regenerateAllVintage(scene: Scene): void {
 export function setHand(scene: Scene, hand: number): void {
   scene.hand = hand;
   for (const s of scene.strokes) if (!isVintage(s)) bakeStroke(scene, s);
+}
+
+// Paper-level only: grain never touches strokes, so no re-bake and no
+// vintage interaction (unlike setHand above).
+export function setGrain(scene: Scene, grain: number): void {
+  scene.grain = Math.min(1, Math.max(0, grain));
 }
 
 export function setPalette(scene: Scene, paletteId: string): void {

@@ -25,6 +25,7 @@ export interface Scene {
   sheet: { w: number; h: number };
   paletteId: string;
   hand: number;
+  grain: number;
   strokes: Stroke[];
 }
 

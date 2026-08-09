@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { addStroke, deleteStroke, isVintage, newScene, regenerateAllVintage, reparamStroke, rerollStroke, reslotStroke, setHand, setPalette, vintageCount } from "../src/engine/scene";
+import { addStroke, deleteStroke, isVintage, newScene, regenerateAllVintage, reparamStroke, rerollStroke, reslotStroke, setGrain, setHand, setPalette, vintageCount } from "../src/engine/scene";
 import { zigzag } from "../src/brushes/zigzag";
 import { defaultParams } from "../src/model/types";
 import type { BrushInput, Scene, Stroke } from "../src/model/types";
@@ -93,5 +93,27 @@ describe("scene", () => {
     // reparamStroke should not throw for missing brush
     expect(() => reparamStroke(scene, s.id, { ...s.params })).not.toThrow();
     expect(s.baked[0]!.d).toBe(frozenBake);
+  });
+});
+
+describe("grain", () => {
+  test("newScene starts with grain 0", () => {
+    expect(newScene(800, 800).grain).toBe(0);
+  });
+  test("setGrain clamps to [0, 1] and never touches strokes", () => {
+    const scene = newScene(1600, 1600);
+    const stroke = addStroke(scene, {
+      brush: "zigzag",
+      input: { kind: "path", points: [{ x: 0, y: 0 }, { x: 300, y: 0 }] },
+      seed: 7, params: { runLength: 28, jaggedness: 0.5, hug: 0.6, reversals: 0.15 }, colorSlot: 1,
+    });
+    const bakedBefore = JSON.stringify(stroke.baked);
+    setGrain(scene, 0.5);
+    expect(scene.grain).toBe(0.5);
+    setGrain(scene, -1);
+    expect(scene.grain).toBe(0);
+    setGrain(scene, 2);
+    expect(scene.grain).toBe(1);
+    expect(JSON.stringify(stroke.baked)).toBe(bakedBefore); // no re-bake
   });
 });
