@@ -63,3 +63,52 @@ describe("SheetRenderer", () => {
     expect(svg.querySelector("g.overlay path.halo")).toBeNull();
   });
 });
+
+describe("grain layer", () => {
+  function grainScene(grain: number, paletteId = "notebook") {
+    const scene = newScene(400, 400, paletteId);
+    scene.grain = grain;
+    return scene;
+  }
+
+  test("renderScene emits grain layer between paper and strokes", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
+    new SheetRenderer(svg).renderScene(grainScene(0.5));
+    const kids = Array.from(svg.children).map((c) => c.getAttribute("class"));
+    expect(kids).toEqual(["paper", "grain-layer", "strokes", "live", "overlay"]);
+    const rect = svg.querySelector("g.grain-layer rect.grain")!;
+    expect(rect.getAttribute("opacity")).toBe("0.18"); // 0.5 * 0.35 rounded to 2dp
+    expect(rect.getAttribute("filter")).toBe("url(#ww-grain)");
+    const turb = svg.querySelector("g.grain-layer feTurbulence")!;
+    expect(turb.getAttribute("seed")).toBe("7"); // fixed: deterministic grain
+    expect(turb.getAttribute("type")).toBe("fractalNoise");
+  });
+
+  test("grain 0 renders the layer at opacity 0", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
+    new SheetRenderer(svg).renderScene(grainScene(0));
+    expect(svg.querySelector("rect.grain")!.getAttribute("opacity")).toBe("0");
+  });
+
+  test("speckle tone follows paper luminance: dark on light paper, light on dark", () => {
+    const light = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
+    new SheetRenderer(light).renderScene(grainScene(0.5, "notebook"));
+    const dark = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
+    new SheetRenderer(dark).renderScene(grainScene(0.5, "neon"));
+    const values = (s: SVGSVGElement) => s.querySelector("feColorMatrix")!.getAttribute("values")!;
+    expect(values(light)).toContain("0 0 0 0 0 "); // black speckle rows
+    expect(values(dark)).toContain("0 0 0 0 1 "); // white speckle rows
+  });
+
+  test("updateGrain swaps opacity in place without touching strokes DOM", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
+    const r = new SheetRenderer(svg);
+    const scene = grainScene(0);
+    r.renderScene(scene);
+    const strokesG = svg.querySelector("g.strokes");
+    scene.grain = 1;
+    r.updateGrain(scene);
+    expect(svg.querySelector("rect.grain")!.getAttribute("opacity")).toBe("0.35");
+    expect(svg.querySelector("g.strokes")).toBe(strokesG); // same node, untouched
+  });
+});

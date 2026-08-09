@@ -6,6 +6,16 @@ import type { XY } from "../model/geometry";
 const NS = "http://www.w3.org/2000/svg";
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
+const GRAIN_FILTER_ID = "ww-grain";
+const GRAIN_MAX_OPACITY = 0.35;
+
+// Palettes always use #rrggbb. Rec. 709 luma; < 128 counts as dark paper.
+function paperIsDark(hex: string): boolean {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 128;
+}
+
 function inkAttrs(stroke: Stroke, palette: Palette) {
   const d = stroke.baked.map((b) => b.d).join(" ");
   const width = stroke.baked[0]?.width ?? 2;
@@ -57,6 +67,51 @@ export class SheetRenderer {
     return g;
   }
 
+  // Paper grain: an feTurbulence-filtered rect between paper and strokes.
+  // Lives in the sheet DOM (not stage CSS) so SVG/PNG exports carry it —
+  // the WYSIWYG covenant. Fixed seed keeps it deterministic across renders.
+  private buildGrainLayer(scene: Scene, palette: Palette): SVGGElement {
+    const g = el("g");
+    g.setAttribute("class", "grain-layer");
+
+    const speckle = paperIsDark(palette.paper) ? 1 : 0;
+    const defs = el("defs");
+    const filter = el("filter");
+    filter.setAttribute("id", GRAIN_FILTER_ID);
+    filter.setAttribute("x", "0");
+    filter.setAttribute("y", "0");
+    filter.setAttribute("width", "100%");
+    filter.setAttribute("height", "100%");
+    const turb = el("feTurbulence");
+    turb.setAttribute("type", "fractalNoise");
+    turb.setAttribute("baseFrequency", "0.9");
+    turb.setAttribute("numOctaves", "2");
+    turb.setAttribute("seed", "7");
+    turb.setAttribute("stitchTiles", "stitch");
+    const cm = el("feColorMatrix");
+    cm.setAttribute("type", "matrix");
+    // Rows 1-3 paint the speckle color; row 4 keys alpha off the noise.
+    cm.setAttribute(
+      "values",
+      `0 0 0 0 ${speckle}  0 0 0 0 ${speckle}  0 0 0 0 ${speckle}  0 0 0 0.7 0`,
+    );
+    filter.append(turb, cm);
+    defs.appendChild(filter);
+
+    const rect = el("rect");
+    rect.setAttribute("class", "grain");
+    rect.setAttribute("x", "0");
+    rect.setAttribute("y", "0");
+    rect.setAttribute("width", String(scene.sheet.w));
+    rect.setAttribute("height", String(scene.sheet.h));
+    rect.setAttribute("filter", `url(#${GRAIN_FILTER_ID})`);
+    rect.setAttribute("opacity", String(r2(scene.grain * GRAIN_MAX_OPACITY)));
+    rect.style.pointerEvents = "none";
+
+    g.append(defs, rect);
+    return g;
+  }
+
   renderScene(scene: Scene): void {
     this.svg.setAttribute("viewBox", `0 0 ${scene.sheet.w} ${scene.sheet.h}`);
     this.svg.replaceChildren();
@@ -70,6 +125,8 @@ export class SheetRenderer {
     paper.setAttribute("height", String(scene.sheet.h));
     paper.setAttribute("fill", palette.paper);
     this.svg.appendChild(paper);
+
+    this.svg.appendChild(this.buildGrainLayer(scene, palette));
 
     const strokesG = el("g");
     strokesG.setAttribute("class", "strokes");
@@ -157,5 +214,13 @@ export class SheetRenderer {
     halo.setAttribute("stroke-width", String(width + 8));
     halo.style.pointerEvents = "none";
     overlay.appendChild(halo);
+  }
+
+  // Dial-drag path: replace only the grain layer (turbulence recomputes, but
+  // strokes/selection DOM stay untouched — no full renderScene per input tick).
+  updateGrain(scene: Scene): void {
+    const layer = this.svg.querySelector<SVGGElement>("g.grain-layer");
+    if (!layer) return; // renderScene hasn't run yet
+    layer.replaceWith(this.buildGrainLayer(scene, getPalette(scene.paletteId)));
   }
 }
