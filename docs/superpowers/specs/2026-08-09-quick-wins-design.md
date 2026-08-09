@@ -1,7 +1,7 @@
 # Wobblewerk Round 2, Spec B — Quick Wins: palettes, grain, S/M/L sheets
 
 **Date:** 2026-08-09
-**Status:** approved design, awaiting implementation plan
+**Status:** implemented (see docs/superpowers/plans/2026-08-09-quick-wins.md)
 **Prereq reading:** `2026-08-08-wobblewerk-design.md` (v1 spec — covenant, data model, vintage policy)
 
 ## Context

@@ -8,8 +8,14 @@ A fun sketching **instrument**/toy — wobbly zigzags, hex-packed regions, sun g
 
 * Move quick, scribble, inspire yourself, break things, undo.
 * Procedurally generated strokes/paths: tweak the parameters before or after
-* Opinionated color pallettes. Limitations are inspiring!
+* Opinionated color pallettes (six of them, from Ballpoint to Neon-on-black). Limitations are inspiring!
 * Export to PNG for quick sharing, or SVG for further editing in Illustrator/Inkscape
+
+## Sheets & dials
+
+- **Sheet sizes**: New Sheet offers S / M / L in square, portrait, and landscape. Marks are fixed-size, so a Small sheet reads bold and chunky — and it renders true-to-size on screen (a Small sheet really is half a Large one; your PNG matches what you see).
+- **hand** (global dial): 0 = ruler-clean, 1 = notebook tremor.
+- **grain** (global dial): paper tooth, from smooth to speckled. Baked into SVG/PNG exports.
 
 ## Vibe Coded
 
