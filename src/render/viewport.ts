@@ -21,7 +21,11 @@ export class ViewBox {
     this.y = (this.sheetH - this.h) / 2;
   }
   zoomAt(px: number, py: number, factor: number): void {
-    const minW = this.sheetW / 8, maxW = this.sheetW * 4;
+    // Clamp off the L-equivalent (refW), not the raw sheet width: fit()
+    // can converge to vb.w > sheetW * 4 for S/M sheets in wide stages, so
+    // clamping against sheetW would snap the view tighter on the first
+    // wheel tick instead of stepping. No-op for L sheets (refW === sheetW).
+    const minW = this.refW / 8, maxW = this.refW * 4;
     const clamped = Math.min(maxW, Math.max(minW, this.w * factor)) / this.w;
     this.x = px - (px - this.x) * clamped;
     this.y = py - (py - this.y) * clamped;

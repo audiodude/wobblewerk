@@ -197,6 +197,23 @@ test("grain dial: live render, export coverage, exactly one history entry", asyn
   await expect(page.locator("g.overlay path.halo")).toHaveCount(1);
 });
 
+test("grain dial: survives reload via autosave", async ({ page }) => {
+  await newPortraitSheet(page);
+  await page.locator("#grain-range").evaluate((el) => {
+    const input = el as HTMLInputElement;
+    input.value = "1";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  expect((await getScene(page)).grain).toBe(1);
+
+  await page.waitForTimeout(500); // > autosave debounce
+  await page.reload();
+  expect((await getScene(page)).grain).toBe(1);
+  await expect(page.locator("svg#sheet rect.grain")).toHaveAttribute("opacity", "0.35");
+  await expect(page.locator("#grain-range")).toHaveValue("1");
+});
+
 test("size picker: S is default, dims land in the scene, S renders half of L on screen", async ({ page }) => {
   await page.goto(URL);
   await page.evaluate(() => localStorage.clear());

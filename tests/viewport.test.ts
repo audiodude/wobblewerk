@@ -65,3 +65,22 @@ test("oversized custom sheets never scale down (k clamps at 1)", () => {
   big.fit(800, 800, 40);
   expect(big.w).toBeCloseTo(800 / ((800 - 80) / 3200), 1); // legacy fit math
 });
+
+test("zoomAt clamps off the L-equivalent, not the raw sheet width", () => {
+  // An S sheet (k = 2, refW = 1600) fit into a wide stage converges to
+  // vb.w well past sheetW * 4 = 3200 — clamping against sheetW would have
+  // snapped the very first zoom-out tick tighter instead of stepping ~10%.
+  const v = new ViewBox(800, 800);
+  v.fit(2400, 1000, 40);
+  expect(v.w).toBeGreaterThan(800 * 4);
+
+  const before = v.w;
+  v.zoomAt(400, 400, 1.1);
+  expect(v.w).toBeCloseTo(before * 1.1, 6);
+
+  // L sheets are unaffected: refW === sheetW, so clamps still cap at sheetW * 4.
+  const l = new ViewBox(1600, 2000);
+  l.fit(800, 800);
+  for (let i = 0; i < 30; i++) l.zoomAt(800, 1000, 2);
+  expect(l.w).toBeLessThanOrEqual(1600 * 4 + 1e-6);
+});
