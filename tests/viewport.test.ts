@@ -32,9 +32,36 @@ test("zoom clamps", () => {
 });
 
 test("panBy shifts origin; toString formats", () => {
-  const v = new ViewBox(100, 100);
-  v.fit(100, 100, 0);
+  const v = new ViewBox(1600, 1600);
+  v.fit(1600, 1600, 0);
   v.panBy(10, -5);
   expect(v.toString()).toBe(`${v.x} ${v.y} ${v.w} ${v.h}`);
   expect(v.x).toBeCloseTo(10, 9);
+});
+
+test("fit is unchanged for L sheets (k = 1)", () => {
+  const v = new ViewBox(1600, 2000); // L portrait: min side 1600
+  v.fit(800, 800, 40);
+  expect(v.h).toBeCloseTo(2222.22, 1); // same numbers as the legacy fit test
+  expect(v.w).toBeCloseTo(2222.22, 1);
+});
+
+test("fit shows an S sheet at exactly half the on-screen size of L (constant scale)", () => {
+  const small = new ViewBox(800, 800); // k = 2 -> L-equivalent 1600x1600
+  small.fit(800, 800, 40);
+  const large = new ViewBox(1600, 1600); // k = 1
+  large.fit(800, 800, 40);
+  // Same view scale: identical visible sheet-units for the same container...
+  expect(small.w).toBeCloseTo(large.w, 6);
+  expect(small.h).toBeCloseTo(large.h, 6);
+  // ...so the 800-unit sheet occupies half the view the 1600-unit sheet does,
+  // centered (matte on all sides).
+  expect(small.x).toBeCloseTo((800 - small.w) / 2, 6);
+  expect(small.y).toBeCloseTo((800 - small.h) / 2, 6);
+});
+
+test("oversized custom sheets never scale down (k clamps at 1)", () => {
+  const big = new ViewBox(3200, 3200); // min side > 1600: plain fit
+  big.fit(800, 800, 40);
+  expect(big.w).toBeCloseTo(800 / ((800 - 80) / 3200), 1); // legacy fit math
 });

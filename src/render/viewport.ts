@@ -1,10 +1,20 @@
 export class ViewBox {
   x = 0; y = 0; w: number; h: number;
+  private refW: number;
+  private refH: number;
   constructor(private sheetW: number, private sheetH: number) {
     this.w = sheetW; this.h = sheetH;
+    // WYSIWYG constant scale: fit() converges to the sheet's L-equivalent
+    // (short side scaled up to 1600), so S/M sheets render proportionally
+    // smaller on screen while marks keep their on-screen size. k = 1 for
+    // every L sheet (legacy behavior untouched); clamped so oversized
+    // custom sheets still just fit rather than overflowing.
+    const k = Math.max(1, 1600 / Math.min(sheetW, sheetH));
+    this.refW = sheetW * k;
+    this.refH = sheetH * k;
   }
   fit(containerW: number, containerH: number, margin = 40): void {
-    const scale = Math.min((containerW - margin * 2) / this.sheetW, (containerH - margin * 2) / this.sheetH);
+    const scale = Math.min((containerW - margin * 2) / this.refW, (containerH - margin * 2) / this.refH);
     this.w = containerW / scale;
     this.h = containerH / scale;
     this.x = (this.sheetW - this.w) / 2;
