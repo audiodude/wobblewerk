@@ -453,7 +453,9 @@ EOF
 )"
 ```
 
----### Task 4: Grain dial UI wiring + e2e
+---
+
+### Task 4: Grain dial UI wiring + e2e
 
 **Files:**
 - Modify: `index.html`, `src/styles.css`, `src/ui/chrome.ts`, `src/main.ts`
