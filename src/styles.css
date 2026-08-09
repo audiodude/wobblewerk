@@ -267,7 +267,8 @@ button {
   opacity: 0.45;
 }
 
-#hand-dial {
+#hand-dial,
+#grain-dial {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -275,7 +276,8 @@ button {
   color: var(--text-dim);
 }
 
-#hand-dial input[type="range"] {
+#hand-dial input[type="range"],
+#grain-dial input[type="range"] {
   width: 100%;
 }
 

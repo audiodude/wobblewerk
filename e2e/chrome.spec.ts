@@ -160,3 +160,39 @@ test("Escape mid-slider-drag commits the partial edit as exactly one history ent
   await page.keyboard.press("Control+z");
   await expect(page.locator("g.strokes > g")).toHaveCount(0);
 });
+
+test("grain dial: live render, export coverage, exactly one history entry", async ({ page }) => {
+  await newPortraitSheet(page);
+  const [cx, cy] = await stageCenter(page);
+  await drag(page, [cx - 150, cy], [cx + 150, cy - 80]);
+
+  const grainRect = page.locator("svg#sheet rect.grain");
+  await expect(grainRect).toHaveAttribute("opacity", "0");
+
+  await page.locator("#grain-range").evaluate((el) => {
+    const input = el as HTMLInputElement;
+    input.value = "1";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  expect((await getScene(page)).grain).toBe(1);
+  await expect(grainRect).toHaveAttribute("opacity", "0.35");
+
+  // WYSIWYG: the exported SVG carries the grain layer
+  const svgStr = await page.evaluate(() => (window as any).__ww.exportSvgString());
+  expect(svgStr).toContain("feTurbulence");
+
+  // exactly one history entry: one undo restores 0 (and the dial follows)
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur?.());
+  await page.keyboard.press("Control+z");
+  expect((await getScene(page)).grain).toBe(0);
+  await expect(grainRect).toHaveAttribute("opacity", "0");
+  await expect(page.locator("#grain-range")).toHaveValue("0");
+
+  // neon (first dark paper): paper re-skins, speckle flips to white, and the
+  // selection halo survives the palette swap
+  await page.selectOption("#palette-select", "neon");
+  await expect(page.locator("svg#sheet rect.paper")).toHaveAttribute("fill", "#1b1b1e");
+  expect(await page.locator("svg#sheet feColorMatrix").getAttribute("values")).toContain("0 0 0 0 1 ");
+  await expect(page.locator("g.overlay path.halo")).toHaveCount(1);
+});

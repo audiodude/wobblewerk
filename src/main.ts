@@ -8,6 +8,7 @@ import {
   regenerateAllVintage,
   reslotStroke,
   seedIdCounter,
+  setGrain,
   setHand,
   setPalette,
 } from "./engine/scene";
@@ -43,6 +44,7 @@ const newDialog = document.getElementById("new-dialog") as HTMLDialogElement;
 const paletteStripEl = document.getElementById("palette-strip") as HTMLElement;
 const paletteSelect = document.getElementById("palette-select") as HTMLSelectElement;
 const handDialInput = document.querySelector<HTMLInputElement>("#hand-dial input")!;
+const grainDialInput = document.querySelector<HTMLInputElement>("#grain-dial input")!;
 const vintageBannerEl = document.getElementById("vintage-banner") as HTMLElement;
 const vintageCountEl = document.getElementById("vintage-count") as HTMLElement;
 const btnRegenVintage = document.getElementById("btn-regen-vintage") as HTMLButtonElement;
@@ -269,6 +271,15 @@ function onHandCommit(): void {
   commit();
 }
 
+function onGrainInput(v: number): void {
+  setGrain(scene, v);
+  renderer.updateGrain(scene); // grain touches no strokes — no full re-render
+}
+
+function onGrainCommit(): void {
+  commit();
+}
+
 function onRegenVintage(): void {
   regenerateAllVintage(scene);
   renderer.renderScene(scene);
@@ -281,6 +292,7 @@ const chromeDeps: ChromeDeps = {
   paletteStrip: paletteStripEl,
   paletteSelect,
   handDial: handDialInput,
+  grainDial: grainDialInput,
   banner: vintageBannerEl,
   bannerCount: vintageCountEl,
   bannerRegen: btnRegenVintage,
@@ -290,6 +302,8 @@ const chromeDeps: ChromeDeps = {
   onPaletteChange,
   onHandInput,
   onHandCommit,
+  onGrainInput,
+  onGrainCommit,
   onRegenVintage,
 };
 installChrome(chromeDeps);

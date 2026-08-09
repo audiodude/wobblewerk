@@ -7,6 +7,7 @@ export interface ChromeDeps {
   paletteStrip: HTMLElement; // #palette-strip
   paletteSelect: HTMLSelectElement; // #palette-select
   handDial: HTMLInputElement; // #hand-dial input
+  grainDial: HTMLInputElement; // #grain-dial input
   banner: HTMLElement; // #vintage-banner
   bannerCount: HTMLElement; // #vintage-count
   bannerRegen: HTMLButtonElement; // #btn-regen-vintage
@@ -16,6 +17,8 @@ export interface ChromeDeps {
   onPaletteChange(id: string): void;
   onHandInput(v: number): void; // live: setHand + full re-render (no push)
   onHandCommit(): void; // change event: commit()
+  onGrainInput(v: number): void; // live: setGrain + updateGrain (no push)
+  onGrainCommit(): void; // change event: commit()
   onRegenVintage(): void;
 }
 
@@ -42,6 +45,9 @@ export function installChrome(deps: ChromeDeps): void {
   });
   deps.handDial.addEventListener("change", () => deps.onHandCommit());
 
+  deps.grainDial.addEventListener("input", () => deps.onGrainInput(Number(deps.grainDial.value)));
+  deps.grainDial.addEventListener("change", () => deps.onGrainCommit());
+
   deps.bannerRegen.addEventListener("click", () => deps.onRegenVintage());
 }
 
@@ -62,6 +68,7 @@ export function refreshChrome(deps: ChromeDeps): void {
   // class of bug. Never runs mid-drag: this only fires from commit()/scene-
   // swap paths, never from the dial's own 'input' handler.
   deps.handDial.value = String(deps.getScene().hand);
+  deps.grainDial.value = String(deps.getScene().grain);
 
   // Only ever hides here — showing it live is the dial-input handler's job
   // (installChrome), scoped to the moment the user actually moves the dial.
