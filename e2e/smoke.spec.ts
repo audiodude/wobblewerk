@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { drag, dragArc, newPortraitSheet, strokeFirstPointOnScreen } from "./helpers";
+import { drag, dragArc, getScene, newPortraitSheet, strokeFirstPointOnScreen } from "./helpers";
 
 test("draw, undo, redo, autosave, export", async ({ page }) => {
   await newPortraitSheet(page);
@@ -30,10 +30,12 @@ test("draw, undo, redo, autosave, export", async ({ page }) => {
   expect(svgStr).toContain("<path");
   expect(svgStr).not.toContain("hit");
 
-  // hexpack: switch tool, drag an arc (the brush closes the loop itself)
+  // squarecluster: switch tool, drag an arc (the brush closes the loop itself)
   await page.keyboard.press("2");
+  await expect(page.locator('#tools button[data-tool="squarecluster"]')).toHaveAttribute("data-active", "true");
   await dragArc(page, [cx - 20, cy + 260], 130, 200, 340);
   await expect(strokes).toHaveCount(2);
+  expect((await getScene(page)).strokes[1].brush).toBe("squarecluster");
 
   // sunstamp: click
   await page.keyboard.press("3");

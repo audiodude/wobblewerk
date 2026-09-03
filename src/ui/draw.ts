@@ -22,22 +22,22 @@ export interface DrawDeps {
   onStrokeCommitted(id: string): void;
 }
 
-type DragTool = "zigzag" | "hexpack";
+type DragTool = "zigzag" | "squarecluster";
 
 function isBrushTool(tool: Tool): tool is DragTool | "sunstamp" {
-  return tool === "zigzag" || tool === "hexpack" || tool === "sunstamp";
+  return tool === "zigzag" || tool === "squarecluster" || tool === "sunstamp";
 }
 
 /**
  * Wires pointer interactions on `deps.svg` to draw with the currently active brush
- * tool: zigzag (path, live full-pipeline preview), hexpack (region, dashed ghost
- * preview, packs on release), sunstamp (point, hover preview + click-to-stamp).
+ * tool: zigzag (path, live full-pipeline preview), squarecluster (region, dashed
+ * ghost preview, packs on release), sunstamp (point, hover preview + click-to-stamp).
  * Self-contained state machine — no module-level globals outside this closure.
  */
 export function installDrawing(deps: DrawDeps): void {
   const { svg, getScene, state, renderer, clientToSheet, getParams, isPanning, commit, onStrokeCommitted } = deps;
 
-  // ---- drag state, used by the zigzag/hexpack pointerdown->move->up cycle ----
+  // ---- drag state, used by the zigzag/squarecluster pointerdown->move->up cycle ----
   let dragging = false;
   let dragTool: DragTool | null = null;
   let activePointerId = -1;
@@ -103,7 +103,7 @@ export function installDrawing(deps: DrawDeps): void {
 
   function renderDragLive(): void {
     if (!dragging || !dragTool) return;
-    if (dragTool === "hexpack") {
+    if (dragTool === "squarecluster") {
       renderer.renderGhost(spine);
       return;
     }
@@ -126,7 +126,7 @@ export function installDrawing(deps: DrawDeps): void {
     const scene = getScene();
     const params = { ...getParams(tool) };
     const input: BrushInput =
-      tool === "hexpack" ? { kind: "region", points: finalSpine } : { kind: "path", points: finalSpine };
+      tool === "squarecluster" ? { kind: "region", points: finalSpine } : { kind: "path", points: finalSpine };
     if (bakedFor(tool, input, dragSeed, params).length === 0) return; // degenerate: nothing generated, don't commit
 
     const stroke = addStroke(scene, { brush: tool, input, seed: dragSeed, params, colorSlot: dragColorSlot });

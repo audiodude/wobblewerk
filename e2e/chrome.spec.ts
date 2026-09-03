@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { drag, getScene, newPortraitSheet, stageCenter, URL } from "./helpers";
+import { fileURLToPath } from "node:url";
+import { drag, getScene, newPortraitSheet, stageCenter, strokeFirstPointOnScreen, URL } from "./helpers";
 
 // Focused coverage for the chrome/wiring layer (main.ts, ui/chrome.ts,
 // ui/panel.ts) — the flows the smoke test doesn't touch: palette
@@ -135,6 +136,29 @@ test("re-roll (key and panel button) changes the seed, keeps params and color", 
   await page.click("#param-panel .panel-actions button:has-text('re-roll')");
   after = (await getScene(page)).strokes[0];
   expect(after.seed).not.toBe(seedAfterKey);
+});
+
+test("hexpack is hidden from the toolbar but saved hexpack strokes still open, render, and edit", async ({ page }) => {
+  await newPortraitSheet(page);
+  await expect(page.locator('#tools button[data-tool="hexpack"]')).toHaveCount(0);
+  await blurActive(page); // the New-sheet dialog button still has focus; tool keys ignore focused form controls
+  await page.keyboard.press("2");
+  await expect(page.locator('#tools button[data-tool="squarecluster"]')).toHaveAttribute("data-active", "true");
+
+  const strokes = page.locator("g.strokes > g");
+  await page.setInputFiles("#file-open", fileURLToPath(new globalThis.URL("./fixtures/hexpack-sheet.json", import.meta.url)));
+  await expect(strokes).toHaveCount(1);
+  const scene = await getScene(page);
+  expect(scene.strokes[0].brush).toBe("hexpack");
+  expect(await page.locator("g.strokes path.ink").first().getAttribute("d")).toMatch(/^M /);
+
+  // select it: the hexpack param panel (from the still-registered brush) comes up, editable
+  await page.keyboard.press("v");
+  const [selX, selY] = await strokeFirstPointOnScreen(page, scene.strokes[0].id);
+  await page.mouse.click(selX, selY);
+  await expect(page.locator("g.overlay path.halo")).toHaveCount(1);
+  await expect(page.locator("#param-panel label", { hasText: "cell size" })).toHaveCount(1);
+  await expect(page.locator('#param-panel input[type="range"]').first()).toBeEnabled();
 });
 
 test("Escape mid-slider-drag commits the partial edit as exactly one history entry", async ({ page }) => {

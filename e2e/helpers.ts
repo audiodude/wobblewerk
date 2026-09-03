@@ -20,11 +20,11 @@ export async function drag(page: Page, from: [number, number], to: [number, numb
   await page.mouse.up();
 }
 
-// hexpack's region input is closed by the brush itself (first point
-// re-appended) — a straight there-and-back drag would enclose ~zero area
-// and only ever emit the trivial boundary contour (or nothing, if RDP
-// simplification collapses it below 3 points). Sweep a real arc instead so
-// the closed region has non-trivial area and reliably packs geometry.
+// squarecluster's region input is closed by the brush itself (first point
+// re-appended) — a straight there-and-back drag would enclose ~zero area,
+// so the packing budget rounds to a lone square (or nothing, if every start
+// point lands outside the sliver). Sweep a real arc instead so the closed
+// region has non-trivial area and reliably packs geometry.
 export async function dragArc(page: Page, center: [number, number], radius: number, startDeg: number, endDeg: number): Promise<void> {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const pt = (deg: number): [number, number] => [center[0] + radius * Math.cos(toRad(deg)), center[1] + radius * Math.sin(toRad(deg))];

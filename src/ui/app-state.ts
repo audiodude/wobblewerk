@@ -1,4 +1,4 @@
-export type Tool = "zigzag" | "hexpack" | "sunstamp" | "select";
+export type Tool = "zigzag" | "squarecluster" | "sunstamp" | "select";
 export class AppState {
   tool: Tool = "zigzag";
   pinnedSlot: number | null = null;   // null = auto-rotate

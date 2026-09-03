@@ -529,7 +529,7 @@ svgEl.addEventListener("click", (e) => {
   else deselect();
 });
 
-const TOOL_KEYS: Record<string, Tool> = { "1": "zigzag", "2": "hexpack", "3": "sunstamp", v: "select" };
+const TOOL_KEYS: Record<string, Tool> = { "1": "zigzag", "2": "squarecluster", "3": "sunstamp", v: "select" };
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {

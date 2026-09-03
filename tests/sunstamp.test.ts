@@ -28,6 +28,6 @@ describe("sunstamp", () => {
   });
 });
 
-test("registry has all three brushes", () => {
-  expect(Object.keys(BRUSHES).sort()).toEqual(["hexpack", "sunstamp", "zigzag"]);
+test("registry has all four brushes", () => {
+  expect(Object.keys(BRUSHES).sort()).toEqual(["hexpack", "squarecluster", "sunstamp", "zigzag"]);
 });
