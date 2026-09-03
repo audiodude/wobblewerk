@@ -94,6 +94,14 @@ Requirements: Node.js (modern, tested with asdf-managed versions).
 
 Hexpack (the round-1 region brush) is hidden from the toolbar but still registered: existing sheets containing hexpack strokes render, autosave, export, and stay editable via the select tool.
 
+### Deploy
+
+Static build, direct-uploaded to the Cloudflare Pages project `wobblewerk` (serves `wobble.audiodude.xyz`). Deploy `dist/` only — never the project root:
+
+```bash
+npm run build && CLOUDFLARE_API_TOKEN=$CF_API_TOKEN npx wrangler@3 pages deploy dist --project-name wobblewerk --branch main
+```
+
 ---
 
 Made with whimsy by [Travis Briggs](https://travisbriggs.com).
